@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA Creators Content Hub — Seu próximo conteúdo começa aqui</title>
+<meta name="description" content="Veja o briefing da semana, se inspire, grave seu conteúdo e apareça no mural das creators AURA. A central de briefings e captação de conteúdo do AURA Creators Club.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#formulario">Pular para o formulário</a>
+
+<!-- HEADER -->
+<header class="header" id="topo">
+  <div class="header__inner">
+    <img class="logo-aura" src="assets/aura-logo-positive.png" alt="AURA Beauty" height="22">
+    <a class="btn btn--small btn--dark" href="#formulario">Enviar conteúdo</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="hero-mandala" src="assets/mandala.svg" alt="" aria-hidden="true">
+    <div class="hero__inner">
+      <span class="eyebrow">Content Hub</span>
+      <h1 id="hero-title" class="hero__title">Seu próximo conteúdo começa aqui.</h1>
+      <p class="hero__subtitle">Toda semana tem um produto em foco, um briefing novo e uma oportunidade de aparecer. Veja o que gravar, se inspire em quem já publicou e envie seu link aqui — assim, a gente consegue acompanhar o seu conteúdo e impulsionar ele pra aumentar o seu resultado.</p>
+      <a class="btn btn--primary btn--full" href="#formulario">Enviar meu conteúdo</a>
+    </div>
+  </section>
+
+  <!-- BRIEFING DA SEMANA (DESTAQUE) -->
+  <section class="section section--dark" id="briefing-destaque-section" aria-labelledby="briefing-title">
+    <div class="section__inner" id="briefing-destaque">
+      <p class="briefing__loading">Carregando o briefing da semana…</p>
+    </div>
+  </section>
+
+  <!-- INSPIRE-SE -->
+  <section class="section section--flush" aria-labelledby="inspira-title">
+    <div class="section__inner section__inner--flush-h">
+      <span class="eyebrow">Inspire-se</span>
+      <h2 id="inspira-title" class="section__title">O que as creators estão criando</h2>
+      <p class="section__microcopy">Referências de conteúdo aprovado pra te dar uma direção antes de gravar o seu.</p>
+    </div>
+    <div class="inspira" id="inspira" aria-live="polite">
+      <p class="inspira__loading">Carregando referências…</p>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="section section--muted" aria-labelledby="como-funciona-title">
+    <div class="section__inner">
+      <h2 id="como-funciona-title" class="section__title">É simples assim</h2>
+      <ol class="steps">
+        <li class="step">
+          <img class="step__icon" src="assets/icon-conteudo.png" alt="" aria-hidden="true">
+          <div>
+            <p class="step__title">Veja o briefing da semana</p>
+            <p class="step__desc">Confira o produto em foco e as regras de gravação logo acima.</p>
+          </div>
+        </li>
+        <li class="step">
+          <img class="step__icon" src="assets/icon-inscreva-se.png" alt="" aria-hidden="true">
+          <div>
+            <p class="step__title">Grave e poste</p>
+            <p class="step__desc">Siga o direcional do briefing e publique no Instagram ou TikTok.</p>
+          </div>
+        </li>
+        <li class="step">
+          <img class="step__icon" src="assets/icon-visibilidade.png" alt="" aria-hidden="true">
+          <div>
+            <p class="step__title">Envie aqui embaixo</p>
+            <p class="step__desc">Cole o link do seu post e apareça no mural. Simples assim.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- MURAL DE CREATORS -->
+  <section class="section section--flush" aria-labelledby="mural-title">
+    <div class="section__inner section__inner--flush-h">
+      <span class="eyebrow">Vitrine</span>
+      <h2 id="mural-title" class="section__title">Quem já está participando</h2>
+      <p class="section__microcopy">Cada card aqui é uma creator que já enviou conteúdo. Bora aparecer também?</p>
+    </div>
+    <div class="mural" id="mural" aria-live="polite">
+      <p class="mural__loading">Carregando participantes…</p>
+    </div>
+  </section>
+
+  <!-- BRIEFINGS ANTERIORES (ARQUIVO) -->
+  <section class="section section--muted" aria-labelledby="arquivo-title">
+    <div class="section__inner">
+      <h2 id="arquivo-title" class="section__title">Briefings anteriores</h2>
+      <p class="section__microcopy">Ainda dá tempo de enviar conteúdo de algumas semanas passadas — confira abaixo.</p>
+      <div class="arquivo" id="briefings-arquivo">
+        <p class="arquivo__loading">Carregando…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMPANHAS ATIVAS (condicional) -->
+  <section class="section" id="campanhas-section" aria-labelledby="campanhas-title" hidden>
+    <div class="section__inner">
+      <h2 id="campanhas-title" class="section__title">Campanhas ativas</h2>
+      <div class="campanhas" id="campanhas-ativas"></div>
+    </div>
+  </section>
+
+  <!-- FORMULÁRIO -->
+  <section class="section section--muted" id="formulario" aria-labelledby="form-title">
+    <div class="section__inner">
+      <h2 id="form-title" class="section__title">Envie seu conteúdo</h2>
+      <p class="section__text" id="formulario-intro">Preencha os dados abaixo e cole o link do seu post.</p>
+
+      <div id="formulario-wrap">
+      <form class="form-card" id="creator-form" novalidate>
+
+        <div class="field">
+          <label for="nome">Nome completo *</label>
+          <input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name" required>
+          <span class="field__error" data-error-for="nome"></span>
+        </div>
+
+        <div class="field">
+          <label for="email">E-mail *</label>
+          <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" autocomplete="email" required>
+          <span class="field__error" data-error-for="email"></span>
+        </div>
+
+        <div class="field">
+          <label for="whatsapp">WhatsApp *</label>
+          <input type="tel" id="whatsapp" name="whatsapp" placeholder="(11) 91234-5678" autocomplete="tel" required>
+          <span class="field__error" data-error-for="whatsapp"></span>
+        </div>
+
+        <div class="field">
+          <label for="codigo">Código de creator / cupom *</label>
+          <input type="text" id="codigo" name="codigo" placeholder="Ex: AURA10" required>
+          <span class="field__error" data-error-for="codigo"></span>
+        </div>
+
+        <div class="field">
+          <label for="instagram">Seu @ no Instagram *</label>
+          <input type="text" id="instagram" name="instagram" placeholder="@seuinstagram" required>
+          <span class="field__error" data-error-for="instagram"></span>
+        </div>
+
+        <div class="field">
+          <label for="briefing_ref">Esse conteúdo é referente a qual briefing? *</label>
+          <select id="briefing_ref" name="briefing_ref" required>
+            <option value="" disabled selected>Selecione</option>
+          </select>
+          <span class="field__error" data-error-for="briefing_ref"></span>
+        </div>
+
+        <div class="field">
+          <label for="plataforma">Plataforma *</label>
+          <select id="plataforma" name="plataforma" required>
+            <option value="" disabled selected>Selecione</option>
+            <option value="instagram">Instagram (Reels)</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+          <span class="field__error" data-error-for="plataforma"></span>
+        </div>
+
+        <div class="field">
+          <label for="link">Link do conteúdo *</label>
+          <input type="url" id="link" name="link" placeholder="Cole aqui o link do seu post" required>
+          <span class="field__error" data-error-for="link"></span>
+        </div>
+
+        <div class="field field--checkbox">
+          <input type="checkbox" id="consentimento" name="consentimento" required>
+          <label for="consentimento">Autorizo a AURA a exibir meu nome e @ no mural de participantes. *</label>
+          <span class="field__error" data-error-for="consentimento"></span>
+        </div>
+
+        <fieldset class="field field--fieldset">
+          <legend>Autorizo a AURA a impulsionar esse conteúdo? *</legend>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="boost" value="sim" id="boost-sim"> Sim</label>
+            <label class="radio-option"><input type="radio" name="boost" value="nao" id="boost-nao"> Não</label>
+          </div>
+          <span class="field__error" data-error-for="boost"></span>
+        </fieldset>
+
+        <div class="field" id="adcode-field" hidden>
+          <label for="adcode">Adcode do conteúdo *</label>
+          <input type="text" id="adcode" name="adcode" placeholder="Cole aqui o adcode">
+          <span class="field__error" data-error-for="adcode"></span>
+        </div>
+
+        <button type="submit" class="btn btn--dark btn--full" id="submit-btn">Enviar meu conteúdo</button>
+
+        <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
+
+      </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" aria-labelledby="faq-title">
+    <div class="section__inner">
+      <h2 id="faq-title" class="section__title section__title--center">Perguntas frequentes</h2>
+
+      <div class="accordion">
+        <details class="accordion__item">
+          <summary>Preciso enviar conteúdo toda semana?</summary>
+          <p>Não é obrigatório, mas cada briefing tem um prazo — depois que ele encerra, o envio some da lista. Fica de olho no hub pra não perder a janela.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>Que tipo de conteúdo vale?</summary>
+          <p>Reels (Instagram) ou vídeos no TikTok que sigam o briefing do produto em foco na semana.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>Posso enviar conteúdo de um briefing antigo?</summary>
+          <p>Sim, enquanto ele aparecer na lista de "briefings anteriores" com a opção de envio ainda ativa.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>O que é o adcode e por que vocês pedem?</summary>
+          <p>O adcode é o código que a AURA usa pra impulsionar o seu conteúdo como anúncio. Só pedimos se você autorizar o impulsionamento.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>Sou obrigada a autorizar o impulsionamento?</summary>
+          <p>Não. Você pode enviar seu conteúdo normalmente e escolher "não" — isso não afeta o envio.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>Posso aparecer no mural sem informar o Instagram?</summary>
+          <p>Não — o mural mostra nome e @ do Instagram de quem autoriza a exibição pública. Sem o @, você não aparece lá, mas seu envio é registrado normalmente.</p>
+        </details>
+        <details class="accordion__item">
+          <summary>Quando eu recebo retorno sobre meu envio?</summary>
+          <p>Nosso time acompanha os envios e entra em contato pelo WhatsApp informado se precisar de algum ajuste.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="section section--dark section--cta-final" aria-labelledby="cta-final-title">
+    <div class="section__inner">
+      <img class="hero-mandala-small" src="assets/mandala-mini-1.svg" alt="" aria-hidden="true">
+      <h2 id="cta-final-title" class="section__title section__title--light">Seu próximo conteúdo já pode estar no ar.</h2>
+      <p class="section__text section__text--light">Veja o briefing, se inspire, grave e envie o link — leva menos de 2 minutos.</p>
+      <a class="btn btn--primary btn--full" href="#formulario">Enviar meu conteúdo</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer__inner">
+    <img class="logo-aura logo-aura--light" src="assets/aura-logo-negative.png" alt="AURA Beauty" height="22">
+    <p class="footer__contato">Contato/suporte: <a href="https://wa.me/5511936217656" target="_blank" rel="noopener">WhatsApp Influenciadoras (11) 93621-7656</a></p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "active_briefing": {
+    "id": "exemplo-produto-2026-08",
+    "product": "Nome do produto",
+    "title": "Briefing da semana — [preencher título]",
+    "pdf_url": "assets/briefing-exemplo.pdf",
+    "starts_at": "2026-08-11",
+    "ends_at": "2026-08-17",
+    "key_rules": [
+      "Regra-chave 1 de gravação",
+      "Regra-chave 2 de gravação",
+      "Regra-chave 3 de gravação"
+    ]
+  },
+  "past_briefings": [
+    {
+      "id": "exemplo-produto-anterior-2026-07",
+      "product": "Nome do produto anterior",
+      "title": "Briefing da semana passada — [preencher título]",
+      "pdf_url": "assets/briefing-exemplo-anterior.pdf",
+      "ends_at": "2026-08-10",
+      "accepts_submissions": true
+    }
+  ],
+  "active_campaigns": [],
+  "inspiracao": []
+}
