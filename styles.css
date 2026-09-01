@@ -198,12 +198,13 @@ summary:focus-visible {
 }
 
 /* ---------- SEÇÕES GENÉRICAS ---------- */
-.section { padding: 44px 0; background: var(--white); }
+.section { padding: 44px 0; background: var(--white); border-top: 1px solid var(--tan); }
 .section--dark { background: var(--brown); color: var(--white); }
 .section--dark h2, .section--dark h3 { color: var(--tan); }
 .section--muted { background: var(--offwhite); }
 .section--flush { padding: 44px 0; }
 .section--cta-final { text-align: left; }
+.hero + .section { border-top: none; }
 
 .section__inner {
   max-width: 640px;
