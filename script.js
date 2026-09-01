@@ -6,13 +6,17 @@
    e fecha o loop mostrando quando a creator já enviou
    conteúdo pro briefing atual (localStorage, sem login).
 
-   ATENÇÃO — placeholders que precisam ser validados
-   com o dev antes do go-live (ver README.md):
-   WEBHOOK_URL e MURAL_ENDPOINT.
+   Backend: Supabase (projeto Marketing System_AURA).
+   Tabela aura_hub_submissions recebe os envios do form.
+   View aura_hub_mural expõe só quem tem approved = true
+   e consent_public_display = true (curadoria manual feita
+   direto no Table Editor do Supabase — sem código).
    ============================================ */
 
-const WEBHOOK_URL = "https://SUBSTITUIR-PELO-WEBHOOK-REAL.example.com/aura-hub-submit";
-const MURAL_ENDPOINT = "https://SUBSTITUIR-PELO-MURAL-REAL.example.com/aura-hub-mural"; // retorna array de { nome, instagram_handle, plataforma, thumb_url?, boosted? }
+const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
+const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
+const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted&order=created_at.desc`;
 const CONFIG_URL = "briefings.json";
 const SUBMISSION_STORAGE_KEY = "aura_hub_last_submission"; // { briefing_id, submitted_at } — solução simples de P0 pra fechar o loop sem exigir login
 
@@ -350,27 +354,21 @@ function setLoading(button, isLoading) {
   button.classList.toggle("btn--loading", isLoading);
 }
 
-/* payload conforme handoff (lp-aura-creators-content-hub.docx) */
+/* payload no formato da tabela aura_hub_submissions (Supabase) */
 function buildPayload(data) {
   return {
     briefing_id: data.briefing_ref,
     submitted_at: new Date().toISOString(),
-    creator: {
-      name: data.nome,
-      email: data.email,
-      phone: data.whatsapp,
-      coupon_code: data.codigo,
-      instagram_handle: data.instagram,
-    },
-    content: {
-      platform: data.plataforma,
-      url: data.link,
-    },
+    creator_name: data.nome,
+    creator_email: data.email,
+    creator_phone: data.whatsapp,
+    coupon_code: data.codigo,
+    instagram_handle: data.instagram,
+    content_platform: data.plataforma,
+    content_url: data.link,
     consent_public_display: data.consentimento,
-    boost: {
-      authorized: data.boost === "sim",
-      adcode: data.boost === "sim" ? data.adcode : null,
-    },
+    boost_authorized: data.boost === "sim",
+    boost_adcode: data.boost === "sim" ? data.adcode : null,
   };
 }
 
@@ -379,7 +377,12 @@ async function submitToBackend(data) {
 
   const response = await fetch(WEBHOOK_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      Prefer: "return=minimal",
+    },
     body: JSON.stringify(payload),
   });
 
@@ -405,7 +408,12 @@ async function loadMural() {
 }
 
 async function fetchMuralData() {
-  const response = await fetch(MURAL_ENDPOINT);
+  const response = await fetch(MURAL_ENDPOINT, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+  });
   if (!response.ok) {
     throw new Error(`Mural respondeu com status ${response.status}`);
   }
