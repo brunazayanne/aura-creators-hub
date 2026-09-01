@@ -145,14 +145,32 @@ async function addBriefing() {
     .value.split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
+  const pdfInput = document.getElementById("b-pdf");
+  const pdfFile = pdfInput.files[0];
 
   if (!titulo) {
     feedbackEl("b-feedback", "Título é obrigatório.", "error");
     return;
   }
 
+  let pdf_url = null;
+  if (pdfFile) {
+    feedbackEl("b-feedback", "Enviando PDF…", "success");
+    const path = `${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
+    const { error: uploadError } = await client.storage.from("briefings-pdf").upload(path, pdfFile, {
+      contentType: "application/pdf",
+      upsert: false,
+    });
+    if (uploadError) {
+      feedbackEl("b-feedback", `Erro ao enviar o PDF: ${uploadError.message}`, "error");
+      return;
+    }
+    const { data: publicUrlData } = client.storage.from("briefings-pdf").getPublicUrl(path);
+    pdf_url = publicUrlData.publicUrl;
+  }
+
   const { error } = await client.from("aura_hub_briefings").insert({
-    titulo, plataforma: plataforma || null, prazo, ordem, descricao: descricao || null, destaques,
+    titulo, plataforma: plataforma || null, prazo, ordem, descricao: descricao || null, destaques, pdf_url,
   });
 
   if (error) {
@@ -166,6 +184,7 @@ async function addBriefing() {
   document.getElementById("b-prazo").value = "";
   document.getElementById("b-descricao").value = "";
   document.getElementById("b-destaques").value = "";
+  pdfInput.value = "";
   loadBriefings();
 }
 
