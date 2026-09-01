@@ -16,6 +16,15 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let CATEGORIAS = [];
 let PRODUTOS = [];
+let BRIEFINGS = [];
+
+const PLATAFORMA_LABELS = {
+  instagram: "Instagram (Reels)",
+  instagram_story: "Instagram (Story)",
+  tiktok: "TikTok",
+  youtube_shorts: "YouTube (Shorts)",
+  youtube_longo: "YouTube (Conteúdo longo)",
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await client.auth.getSession();
@@ -78,6 +87,7 @@ function showApp() {
   loadBriefings();
   loadCategorias();
   loadSubmissoes();
+  loadRelatorio();
 }
 
 /* ---------- HELPERS ---------- */
@@ -108,6 +118,8 @@ async function loadBriefings() {
     list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
     return;
   }
+  BRIEFINGS = data || [];
+
   if (!data || data.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum briefing cadastrado ainda.</p>';
     return;
@@ -467,4 +479,128 @@ async function uploadSubmissionThumb(id, btn) {
   }
 
   loadSubmissoes();
+}
+
+/* ---------- RELATÓRIO ---------- */
+
+async function loadRelatorio() {
+  const kpisEl = document.getElementById("r-kpis");
+  const plataformaEl = document.getElementById("r-plataforma");
+  const briefingEl = document.getElementById("r-briefing");
+  const rankingEl = document.getElementById("r-ranking");
+
+  const { data, error } = await client.from("aura_hub_submissions").select("*");
+
+  if (error) {
+    [kpisEl, plataformaEl, briefingEl, rankingEl].forEach((el) => {
+      el.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
+    });
+    return;
+  }
+
+  const submissions = data || [];
+
+  if (submissions.length === 0) {
+    [kpisEl, plataformaEl, briefingEl, rankingEl].forEach((el) => {
+      el.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
+    });
+    return;
+  }
+
+  renderRelatorioKpis(kpisEl, submissions);
+  renderRelatorioPlataforma(plataformaEl, submissions);
+  renderRelatorioBriefing(briefingEl, submissions);
+  renderRelatorioRanking(rankingEl, submissions);
+}
+
+function renderRelatorioKpis(el, submissions) {
+  const total = submissions.length;
+  const aprovadas = submissions.filter((s) => s.approved).length;
+  const pendentes = total - aprovadas;
+  const creatorsUnicas = new Set(submissions.map((s) => (s.coupon_code || s.creator_email || "").toLowerCase()).filter(Boolean)).size;
+
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${total}</span><span class="admin-kpi__label">Submissões</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${aprovadas}</span><span class="admin-kpi__label">No mural</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${pendentes}</span><span class="admin-kpi__label">Pendentes</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${creatorsUnicas}</span><span class="admin-kpi__label">Creators únicas</span></div>
+  `;
+}
+
+function renderRelatorioPlataforma(el, submissions) {
+  const counts = {};
+  submissions.forEach((s) => {
+    const key = s.content_platform || "não informado";
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const total = submissions.length;
+
+  el.innerHTML = rows
+    .map(([key, count]) => {
+      const label = PLATAFORMA_LABELS[key] || key;
+      const pct = Math.round((count / total) * 100);
+      return `
+        <div class="admin-row admin-row--metric">
+          <span>${escapeHtml(label)}</span>
+          <span class="admin-row__metric-value">${count} <span class="admin-row__metric-pct">(${pct}%)</span></span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderRelatorioBriefing(el, submissions) {
+  const counts = {};
+  submissions.forEach((s) => {
+    const key = s.briefing_id || "__sem_briefing__";
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  el.innerHTML = rows
+    .map(([key, count]) => {
+      const titulo = key === "__sem_briefing__"
+        ? "Sem briefing (conteúdo por conta própria)"
+        : BRIEFINGS.find((b) => b.id === key)?.titulo || "Briefing removido";
+      return `
+        <div class="admin-row admin-row--metric">
+          <span>${escapeHtml(titulo)}</span>
+          <span class="admin-row__metric-value">${count}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderRelatorioRanking(el, submissions) {
+  const counts = {};
+  submissions.forEach((s) => {
+    const key = (s.coupon_code || "").trim();
+    if (!key) return;
+    if (!counts[key]) counts[key] = { count: 0, nome: s.creator_name || "" };
+    counts[key].count += 1;
+  });
+
+  const rows = Object.entries(counts)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+
+  if (rows.length === 0) {
+    el.innerHTML = '<p class="admin-empty">Nenhum cupom identificado ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = rows
+    .map(
+      ([cupom, info], index) => `
+      <div class="admin-row admin-row--metric">
+        <span>${index + 1}. ${escapeHtml(info.nome || "Sem nome")} — <strong>${escapeHtml(cupom)}</strong></span>
+        <span class="admin-row__metric-value">${info.count}</span>
+      </div>
+    `
+    )
+    .join("");
 }
