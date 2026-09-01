@@ -293,6 +293,9 @@ summary:focus-visible {
 .highlight-list--dark { color: var(--brown); }
 
 /* ---------- MODAL (detalhe do briefing) ---------- */
+.modal-overlay[hidden] {
+  display: none;
+}
 .modal-overlay {
   position: fixed;
   inset: 0;
