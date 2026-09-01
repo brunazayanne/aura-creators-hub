@@ -3,9 +3,10 @@
    Login real via Supabase Auth (crie o usuário admin
    pelo Dashboard do Supabase: Authentication > Users).
    Depois de logada, as escritas em aura_hub_briefings,
-   aura_hub_categorias e aura_hub_produtos são permitidas
-   pela RLS porque a sessão é "authenticated" — a chave
-   anon sozinha (usada no site público) só tem leitura.
+   aura_hub_categorias, aura_hub_produtos e aura_hub_submissions
+   são permitidas pela RLS porque a sessão é "authenticated" —
+   a chave anon sozinha (usada no site público) só tem leitura
+   e o insert de novas submissões.
    ============================================ */
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
@@ -14,6 +15,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let CATEGORIAS = [];
+let PRODUTOS = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await client.auth.getSession();
@@ -29,7 +31,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("b-add").addEventListener("click", addBriefing);
   document.getElementById("c-add").addEventListener("click", addCategoria);
-  document.getElementById("p-add").addEventListener("click", addProduto);
 });
 
 function switchTab(name) {
@@ -76,7 +77,7 @@ function showApp() {
   document.getElementById("admin-app").hidden = false;
   loadBriefings();
   loadCategorias();
-  loadProdutos();
+  loadSubmissoes();
 }
 
 /* ---------- HELPERS ---------- */
@@ -201,22 +202,23 @@ async function deleteBriefing(id) {
   loadBriefings();
 }
 
-/* ---------- CATEGORIAS ---------- */
+/* ---------- CATEGORIAS + PRODUTOS (aninhados) ---------- */
 
 async function loadCategorias() {
   const list = document.getElementById("c-list");
-  const { data, error } = await client
-    .from("aura_hub_categorias")
-    .select("*")
-    .order("ordem", { ascending: true });
 
-  if (error) {
-    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
+  const [{ data: categorias, error: catError }, { data: produtos, error: prodError }] = await Promise.all([
+    client.from("aura_hub_categorias").select("*").order("ordem", { ascending: true }),
+    client.from("aura_hub_produtos").select("*").order("ordem", { ascending: true }),
+  ]);
+
+  if (catError) {
+    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(catError.message)}</p>`;
     return;
   }
 
-  CATEGORIAS = data || [];
-  populateCategoriaSelect();
+  CATEGORIAS = categorias || [];
+  PRODUTOS = prodError ? [] : produtos || [];
 
   if (CATEGORIAS.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhuma categoria cadastrada ainda.</p>';
@@ -224,38 +226,72 @@ async function loadCategorias() {
   }
 
   list.innerHTML = CATEGORIAS
-    .map(
-      (c) => `
-      <div class="admin-row${c.ativo ? "" : " admin-row--inativo"}">
-        <span>${escapeHtml(c.nome)}</span>
-        <div class="admin-row__actions">
-          <button data-action="toggle" data-id="${c.id}" data-ativo="${c.ativo}">${c.ativo ? "Desativar" : "Ativar"}</button>
-          <button class="danger" data-action="delete" data-id="${c.id}">Excluir</button>
-        </div>
-      </div>
-    `
-    )
+    .map((c) => {
+      const produtosDaCategoria = PRODUTOS.filter((p) => p.categoria_id === c.id);
+      const produtosHtml = produtosDaCategoria.length
+        ? produtosDaCategoria
+            .map(
+              (p) => `
+              <div class="admin-row admin-row--nested${p.ativo ? "" : " admin-row--inativo"}">
+                <span>${escapeHtml(p.nome)}</span>
+                <div class="admin-row__actions">
+                  <button data-action="toggle-produto" data-id="${p.id}" data-ativo="${p.ativo}">${p.ativo ? "Desativar" : "Ativar"}</button>
+                  <button class="danger" data-action="delete-produto" data-id="${p.id}">Excluir</button>
+                </div>
+              </div>
+            `
+            )
+            .join("")
+        : '<p class="admin-empty">Nenhum produto nessa categoria ainda.</p>';
+
+      return `
+        <details class="admin-categoria" data-id="${c.id}">
+          <summary>
+            <span>${escapeHtml(c.nome)}${c.ativo ? "" : " (inativa)"}</span>
+            <span class="admin-row__actions">
+              <button type="button" data-action="toggle-categoria" data-id="${c.id}" data-ativo="${c.ativo}">${c.ativo ? "Desativar" : "Ativar"}</button>
+              <button type="button" class="danger" data-action="delete-categoria" data-id="${c.id}">Excluir</button>
+            </span>
+          </summary>
+          <div class="admin-categoria__produtos">
+            ${produtosHtml}
+            <div class="admin-form-row admin-form-row--full admin-form-row--inline">
+              <input type="text" placeholder="Nome do novo produto" data-role="novo-produto-nome">
+              <input type="url" placeholder="URL da imagem (opcional)" data-role="novo-produto-imagem">
+              <button type="button" data-action="add-produto" data-categoria-id="${c.id}">Adicionar produto</button>
+            </div>
+          </div>
+        </details>
+      `;
+    })
     .join("");
 
-  list.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
-    btn.addEventListener("click", () => toggleCategoria(btn.dataset.id, btn.dataset.ativo === "true"))
+  list.querySelectorAll('[data-action="toggle-categoria"]').forEach((btn) =>
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      toggleCategoria(btn.dataset.id, btn.dataset.ativo === "true");
+    })
   );
-  list.querySelectorAll('[data-action="delete"]').forEach((btn) =>
-    btn.addEventListener("click", () => deleteCategoria(btn.dataset.id))
+  list.querySelectorAll('[data-action="delete-categoria"]').forEach((btn) =>
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      deleteCategoria(btn.dataset.id);
+    })
   );
-}
+  list.querySelectorAll('[data-action="toggle-produto"]').forEach((btn) =>
+    btn.addEventListener("click", () => toggleProduto(btn.dataset.id, btn.dataset.ativo === "true"))
+  );
+  list.querySelectorAll('[data-action="delete-produto"]').forEach((btn) =>
+    btn.addEventListener("click", () => deleteProduto(btn.dataset.id))
+  );
+  list.querySelectorAll('[data-action="add-produto"]').forEach((btn) =>
+    btn.addEventListener("click", () => addProdutoInline(btn.dataset.categoriaId, btn))
+  );
 
-function populateCategoriaSelect() {
-  const select = document.getElementById("p-categoria");
-  const current = select.value;
-  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
-  CATEGORIAS.filter((c) => c.ativo).forEach((c) => {
-    const el = document.createElement("option");
-    el.value = c.id;
-    el.textContent = c.nome;
-    select.appendChild(el);
+  // impede que clicar nas ações dentro do <summary> também abra/feche o accordion
+  list.querySelectorAll(".admin-categoria > summary .admin-row__actions").forEach((el) => {
+    el.addEventListener("click", (event) => event.stopPropagation());
   });
-  if (current) select.value = current;
 }
 
 async function addCategoria() {
@@ -281,89 +317,154 @@ async function addCategoria() {
 async function toggleCategoria(id, ativoAtual) {
   await client.from("aura_hub_categorias").update({ ativo: !ativoAtual }).eq("id", id);
   loadCategorias();
-  loadProdutos();
 }
 
 async function deleteCategoria(id) {
   if (!confirm("Excluir essa categoria? Os produtos ligados a ela também serão excluídos.")) return;
   await client.from("aura_hub_categorias").delete().eq("id", id);
   loadCategorias();
-  loadProdutos();
 }
 
-/* ---------- PRODUTOS ---------- */
+async function addProdutoInline(categoriaId, btn) {
+  const details = btn.closest(".admin-categoria");
+  const nomeInput = details.querySelector('[data-role="novo-produto-nome"]');
+  const imagemInput = details.querySelector('[data-role="novo-produto-imagem"]');
+  const nome = nomeInput.value.trim();
+  const imagem_url = imagemInput.value.trim();
 
-async function loadProdutos() {
-  const list = document.getElementById("p-list");
+  if (!nome) {
+    nomeInput.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  const { error } = await client.from("aura_hub_produtos").insert({
+    categoria_id: categoriaId, nome, imagem_url: imagem_url || null, ordem: 0,
+  });
+  btn.disabled = false;
+
+  if (error) {
+    alert(`Erro ao adicionar produto: ${error.message}`);
+    return;
+  }
+
+  loadCategorias();
+}
+
+async function toggleProduto(id, ativoAtual) {
+  await client.from("aura_hub_produtos").update({ ativo: !ativoAtual }).eq("id", id);
+  loadCategorias();
+}
+
+async function deleteProduto(id) {
+  if (!confirm("Excluir esse produto?")) return;
+  await client.from("aura_hub_produtos").delete().eq("id", id);
+  loadCategorias();
+}
+
+/* ---------- SUBMISSÕES (aprovação pro mural + upload de imagem) ---------- */
+
+async function loadSubmissoes() {
+  const list = document.getElementById("s-list");
   const { data, error } = await client
-    .from("aura_hub_produtos")
-    .select("*, aura_hub_categorias(nome)")
-    .order("ordem", { ascending: true });
+    .from("aura_hub_submissions")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
     list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
     return;
   }
   if (!data || data.length === 0) {
-    list.innerHTML = '<p class="admin-empty">Nenhum produto cadastrado ainda.</p>';
+    list.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
     return;
   }
 
   list.innerHTML = data
-    .map(
-      (p) => `
-      <div class="admin-row${p.ativo ? "" : " admin-row--inativo"}">
-        <span>${escapeHtml(p.nome)} <em style="opacity:.7">(${escapeHtml(p.aura_hub_categorias?.nome || "sem categoria")})</em></span>
-        <div class="admin-row__actions">
-          <button data-action="toggle" data-id="${p.id}" data-ativo="${p.ativo}">${p.ativo ? "Desativar" : "Ativar"}</button>
-          <button class="danger" data-action="delete" data-id="${p.id}">Excluir</button>
+    .map((s) => {
+      const handle = (s.instagram_handle || "").replace(/^@+/, "");
+      const statusTag = s.approved
+        ? '<span class="admin-tag admin-tag--ok">No mural</span>'
+        : '<span class="admin-tag admin-tag--pending">Pendente</span>';
+      const consentTag = s.consent_public_display
+        ? "autorizou exibir no mural"
+        : "não autorizou exibir no mural";
+
+      return `
+        <div class="admin-row admin-row--submissao" data-id="${s.id}">
+          <div class="admin-submissao__info">
+            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong> ${handle ? `— @${escapeHtml(handle)}` : ""} ${statusTag}</p>
+            <p style="font-size:12px;opacity:.75;">
+              ${escapeHtml(s.content_platform || "")} · ${escapeHtml(consentTag)}
+              ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver conteúdo</a>` : ""}
+            </p>
+            ${s.thumb_url ? `<img src="${encodeURI(s.thumb_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;margin-top:6px;">` : ""}
+          </div>
+          <div class="admin-submissao__actions">
+            <input type="file" accept="image/*" data-role="thumb-input">
+            <button type="button" data-action="upload-thumb">Salvar imagem</button>
+            <button type="button" data-action="toggle-approve" data-approved="${s.approved}">${s.approved ? "Tirar do mural" : "Aprovar pro mural"}</button>
+          </div>
         </div>
-      </div>
-    `
-    )
+      `;
+    })
     .join("");
 
-  list.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
-    btn.addEventListener("click", () => toggleProduto(btn.dataset.id, btn.dataset.ativo === "true"))
+  list.querySelectorAll('[data-action="toggle-approve"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-id]").dataset.id;
+      toggleApproveSubmission(id, btn.dataset.approved === "true");
+    })
   );
-  list.querySelectorAll('[data-action="delete"]').forEach((btn) =>
-    btn.addEventListener("click", () => deleteProduto(btn.dataset.id))
+  list.querySelectorAll('[data-action="upload-thumb"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-id]").dataset.id;
+      uploadSubmissionThumb(id, btn);
+    })
   );
 }
 
-async function addProduto() {
-  const categoria_id = document.getElementById("p-categoria").value;
-  const nome = document.getElementById("p-nome").value.trim();
-  const imagem_url = document.getElementById("p-imagem").value.trim();
-  const ordem = Number(document.getElementById("p-ordem").value) || 0;
+async function toggleApproveSubmission(id, approvedAtual) {
+  const { error } = await client.from("aura_hub_submissions").update({ approved: !approvedAtual }).eq("id", id);
+  if (error) {
+    alert(`Erro ao atualizar: ${error.message}`);
+    return;
+  }
+  loadSubmissoes();
+}
 
-  if (!categoria_id || !nome) {
-    feedbackEl("p-feedback", "Categoria e nome são obrigatórios.", "error");
+async function uploadSubmissionThumb(id, btn) {
+  const row = btn.closest("[data-id]");
+  const input = row.querySelector('[data-role="thumb-input"]');
+  const file = input.files[0];
+
+  if (!file) {
+    alert("Selecione uma imagem primeiro.");
     return;
   }
 
-  const { error } = await client.from("aura_hub_produtos").insert({
-    categoria_id, nome, imagem_url: imagem_url || null, ordem,
-  });
+  btn.disabled = true;
+  btn.textContent = "Enviando…";
+
+  const path = `${id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
+  const { error: uploadError } = await client.storage.from("mural-thumbs").upload(path, file, { upsert: true });
+
+  if (uploadError) {
+    alert(`Erro ao enviar a imagem: ${uploadError.message}`);
+    btn.disabled = false;
+    btn.textContent = "Salvar imagem";
+    return;
+  }
+
+  const { data: publicUrlData } = client.storage.from("mural-thumbs").getPublicUrl(path);
+  const { error } = await client.from("aura_hub_submissions").update({ thumb_url: publicUrlData.publicUrl }).eq("id", id);
 
   if (error) {
-    feedbackEl("p-feedback", `Erro: ${error.message}`, "error");
+    alert(`Erro ao salvar: ${error.message}`);
+    btn.disabled = false;
+    btn.textContent = "Salvar imagem";
     return;
   }
 
-  feedbackEl("p-feedback", "Produto adicionado.", "success");
-  document.getElementById("p-nome").value = "";
-  document.getElementById("p-imagem").value = "";
-  loadProdutos();
-}
-
-async function toggleProduto(id, ativoAtual) {
-  await client.from("aura_hub_produtos").update({ ativo: !ativoAtual }).eq("id", id);
-  loadProdutos();
-}
-
-async function deleteProduto(id) {
-  if (!confirm("Excluir esse produto?")) return;
-  await client.from("aura_hub_produtos").delete().eq("id", id);
-  loadProdutos();
+  loadSubmissoes();
 }
