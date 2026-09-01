@@ -136,7 +136,9 @@ async function loadBriefings() {
 
 async function addBriefing() {
   const titulo = document.getElementById("b-titulo").value.trim();
-  const plataforma = document.getElementById("b-plataforma").value.trim();
+  const plataforma = Array.from(document.querySelectorAll('input[name="b-plataforma"]:checked'))
+    .map((el) => el.value)
+    .join(", ");
   const prazo = document.getElementById("b-prazo").value || null;
   const ordem = Number(document.getElementById("b-ordem").value) || 0;
   const descricao = document.getElementById("b-descricao").value.trim();
@@ -180,7 +182,7 @@ async function addBriefing() {
 
   feedbackEl("b-feedback", "Briefing adicionado.", "success");
   document.getElementById("b-titulo").value = "";
-  document.getElementById("b-plataforma").value = "";
+  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => (el.checked = false));
   document.getElementById("b-prazo").value = "";
   document.getElementById("b-descricao").value = "";
   document.getElementById("b-destaques").value = "";
