@@ -116,8 +116,8 @@
         </div>
 
         <div class="field">
-          <label for="codigo">Código de creator / cupom *</label>
-          <input type="text" id="codigo" name="codigo" placeholder="Ex: AURA10" required>
+          <label for="codigo">Seu cupom *</label>
+          <input type="text" id="codigo" name="codigo" placeholder="Cupom cadastrado no AURA Creators Club" required>
           <span class="field__error" data-error-for="codigo"></span>
         </div>
 
@@ -138,7 +138,7 @@
 
         <!-- Bloco: seguiu briefing -->
         <div class="field field--reveal" id="bloco-briefing" hidden>
-          <label for="briefing_ref">Qual briefing? *</label>
+          <label for="briefing_ref">Qual briefing você gravou? *</label>
           <select id="briefing_ref" name="briefing_ref">
             <option value="" disabled selected>Selecione</option>
           </select>
@@ -155,7 +155,7 @@
         </div>
 
         <div class="field field--reveal" id="bloco-produto" hidden>
-          <label for="produto_nome">Qual produto? *</label>
+          <label for="produto_nome">Com qual produto você gravou? *</label>
           <select id="produto_nome" name="produto_nome">
             <option value="" disabled selected>Selecione</option>
           </select>
@@ -164,11 +164,14 @@
 
         <!-- Campos comuns, revelados após identificar briefing ou produto -->
         <div class="field field--reveal" id="bloco-plataforma" hidden>
-          <label for="plataforma">Plataforma *</label>
+          <label for="plataforma">Selecione a plataforma do conteúdo postado *</label>
           <select id="plataforma" name="plataforma">
             <option value="" disabled selected>Selecione</option>
             <option value="instagram">Instagram (Reels)</option>
+            <option value="instagram_story">Instagram (Story)</option>
             <option value="tiktok">TikTok</option>
+            <option value="youtube_shorts">YouTube (Shorts)</option>
+            <option value="youtube_longo">YouTube (Conteúdo longo)</option>
           </select>
           <span class="field__error" data-error-for="plataforma"></span>
         </div>
@@ -181,7 +184,7 @@
 
         <div class="field field--checkbox field--reveal" id="bloco-consentimento" hidden>
           <input type="checkbox" id="consentimento" name="consentimento">
-          <label for="consentimento">Autorizo a AURA a exibir meu nome e @ no mural de participantes. *</label>
+          <label for="consentimento">Autorizo a AURA a exibir meu nome e @ no mural de participantes.</label>
           <span class="field__error" data-error-for="consentimento"></span>
         </div>
 
