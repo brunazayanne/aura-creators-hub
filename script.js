@@ -1,141 +1,184 @@
 /* ============================================
    AURA Creators Content Hub
-   Lógica: carrega o config semanal (briefings.json),
-   renderiza destaque + inspire-se + mural (vitrine)
-   + arquivo + campanhas, valida e envia o formulário,
-   e fecha o loop mostrando quando a creator já enviou
-   conteúdo pro briefing atual (localStorage, sem login).
+   Lógica: carrega briefings/produtos/categorias do
+   Supabase (geridos pela página /admin), renderiza
+   os cards de "briefings da semana" + modal, o mural
+   (vitrine), o arquivo de briefings anteriores e as
+   campanhas (briefings.json), valida e envia o
+   formulário progressivo, e fecha o loop mostrando
+   quando a creator já enviou conteúdo pro briefing
+   atual (localStorage, sem login).
 
-   Backend: Supabase (projeto Marketing System_AURA).
-   Tabela aura_hub_submissions recebe os envios do form.
-   View aura_hub_mural expõe só quem tem approved = true
-   e consent_public_display = true (curadoria manual feita
-   direto no Table Editor do Supabase — sem código).
+   Backend: Supabase (projeto AURA Creators Club).
+   - aura_hub_submissions: recebe os envios do form.
+   - aura_hub_mural: view pública (approved + consent).
+   - aura_hub_briefings / aura_hub_produtos / aura_hub_categorias:
+     conteúdo gerido pela creator via /admin.html (login
+     Supabase Auth) — sem precisar editar JSON.
    ============================================ */
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted&order=created_at.desc`;
-const CONFIG_URL = "briefings.json";
+const BRIEFINGS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_briefings?select=*&ativo=eq.true&order=ordem.asc`;
+const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
+const PRODUTOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_produtos?select=*&ativo=eq.true&order=ordem.asc`;
+const CAMPANHAS_CONFIG_URL = "briefings.json";
 const SUBMISSION_STORAGE_KEY = "aura_hub_last_submission"; // { briefing_id, submitted_at } — solução simples de P0 pra fechar o loop sem exigir login
 
-let CONFIG = null;
+let BRIEFINGS = [];
+let CATEGORIAS = [];
+let PRODUTOS = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  CONFIG = await loadConfig();
-  renderBriefingDestaque(CONFIG);
-  renderInspira(CONFIG);
-  renderBriefingsArquivo(CONFIG);
-  renderCampanhas(CONFIG);
-  populateBriefingSelect(CONFIG);
+  const [briefings, categorias, produtos, campanhasConfig] = await Promise.all([
+    fetchSupabaseList(BRIEFINGS_ENDPOINT),
+    fetchSupabaseList(CATEGORIAS_ENDPOINT),
+    fetchSupabaseList(PRODUTOS_ENDPOINT),
+    loadCampanhasConfig(),
+  ]);
+
+  BRIEFINGS = briefings;
+  CATEGORIAS = categorias;
+  PRODUTOS = produtos;
+
+  renderBriefingsSemana(BRIEFINGS);
+  renderBriefingsArquivo(BRIEFINGS);
+  renderCampanhas(campanhasConfig);
+  populateBriefingSelect(BRIEFINGS);
+  populateCategoriaSelect(CATEGORIAS);
+  setupModal();
   setupForm();
   loadMural();
-  applyAlreadySubmittedState(CONFIG);
+  applyAlreadySubmittedState(BRIEFINGS);
 });
 
-/* ---------- CONFIG SEMANAL (briefings.json) ---------- */
+/* ---------- FETCH GENÉRICO (Supabase REST, somente leitura) ---------- */
 
-async function loadConfig() {
+async function fetchSupabaseList(endpoint) {
   try {
-    const response = await fetch(CONFIG_URL);
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!response.ok) throw new Error(`Endpoint respondeu com status ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error(`Falha ao carregar ${endpoint}`, err);
+    return [];
+  }
+}
+
+async function loadCampanhasConfig() {
+  try {
+    const response = await fetch(CAMPANHAS_CONFIG_URL);
     if (!response.ok) throw new Error(`Config respondeu com status ${response.status}`);
     return await response.json();
   } catch (err) {
     console.error("Falha ao carregar briefings.json", err);
-    return { active_briefing: null, past_briefings: [], active_campaigns: [], inspiracao: [] };
+    return { active_campaigns: [] };
   }
 }
 
-function formatDate(iso) {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("-");
+function formatDate(value) {
+  if (!value) return "";
+  const [y, m, d] = value.split("-");
   return `${d}/${m}/${y}`;
 }
 
-function renderBriefingDestaque(config) {
-  const container = document.getElementById("briefing-destaque");
-  const briefing = config.active_briefing;
+function isPast(prazo) {
+  if (!prazo) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return new Date(`${prazo}T00:00:00`) < hoje;
+}
 
-  if (!briefing) {
+/* ---------- BRIEFINGS DA SEMANA (cards + modal) ----------
+   Um briefing é "vigente" se estiver ativo e o prazo não tiver
+   passado (ou não tiver prazo definido). Os que já passaram do
+   prazo aparecem automaticamente em "briefings anteriores" —
+   quem gerencia pela página /admin não precisa mover nada
+   manualmente entre listas. */
+
+function briefingsVigentes(list) {
+  return list.filter((b) => !isPast(b.prazo));
+}
+
+function briefingsEncerrados(list) {
+  return list.filter((b) => isPast(b.prazo));
+}
+
+function renderBriefingsSemana(list) {
+  const container = document.getElementById("briefings-semana");
+  const vigentes = briefingsVigentes(list);
+
+  if (vigentes.length === 0) {
     container.innerHTML = '<p class="briefing__empty">Nenhum briefing em destaque no momento — volte em breve pra conferir a novidade da semana.</p>';
     return;
   }
 
-  container.innerHTML = `
-    <p class="briefing__product">${escapeHtml(briefing.product)}</p>
-    <h2 class="briefing__title">${escapeHtml(briefing.title)}</h2>
-    <p class="briefing__deadline">Envie até ${formatDate(briefing.ends_at)}</p>
-    <ul class="highlight-list">
-      ${briefing.key_rules.slice(0, 3).map((r) => `<li>${escapeHtml(r)}</li>`).join("")}
-    </ul>
-    <a class="btn btn--outline-light" href="${encodeURI(briefing.pdf_url)}" target="_blank" rel="noopener">Baixar briefing completo (PDF)</a>
-  `;
-}
-
-/* ---------- INSPIRE-SE ----------
-   Fonte: config.inspiracao (array opcional em briefings.json).
-   Cada item: { thumb_url, nome, plataforma }. Enquanto não houver
-   curadoria de conteúdo aprovado, a seção assume estado vazio —
-   não é bloqueante pro P0 (ver UX-STUDY-content-hub.md, seção 3). */
-
-function renderInspira(config) {
-  const container = document.getElementById("inspira");
-  const itens = config.inspiracao || [];
-
-  if (itens.length === 0) {
-    container.innerHTML = '<p class="inspira__empty">Em breve, referências de conteúdo aprovado aparecem por aqui.</p>';
-    return;
-  }
-
-  container.innerHTML = itens
+  container.innerHTML = vigentes
     .map(
-      (item) => `
-      <div class="inspira__card">
-        <img class="inspira__thumb" src="${encodeURI(item.thumb_url)}" alt="Referência de conteúdo de ${escapeHtml(item.nome || "creator AURA")}" loading="lazy">
-        <div class="inspira__meta">
-          <p>${escapeHtml(item.nome || "")}</p>
-          <span>${plataformaLabel(item.plataforma)}</span>
-        </div>
-      </div>
+      (b) => `
+      <button type="button" class="briefing-card" data-briefing-id="${escapeHtml(b.id)}">
+        ${b.plataforma ? `<span class="briefing-card__plataforma">${escapeHtml(b.plataforma)}</span>` : ""}
+        <p class="briefing-card__titulo">${escapeHtml(b.titulo)}</p>
+        ${b.prazo ? `<p class="briefing-card__prazo">Envie até ${formatDate(b.prazo)}</p>` : ""}
+        <span class="briefing-card__cta">Ver detalhes</span>
+      </button>
     `
     )
     .join("");
+
+  container.querySelectorAll(".briefing-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const briefing = BRIEFINGS.find((b) => b.id === card.dataset.briefingId);
+      if (briefing) openBriefingModal(briefing);
+    });
+  });
 }
 
-function renderBriefingsArquivo(config) {
+function renderBriefingsArquivo(list) {
   const container = document.getElementById("briefings-arquivo");
-  const past = config.past_briefings || [];
+  const encerrados = briefingsEncerrados(list);
 
-  if (past.length === 0) {
+  if (encerrados.length === 0) {
     container.innerHTML = '<p class="arquivo__empty">Ainda não há briefings anteriores por aqui.</p>';
     return;
   }
 
-  container.innerHTML = past
-    .map((b) => {
-      const statusClass = b.accepts_submissions ? "badge-status--ativo" : "badge-status--encerrado";
-      const statusText = b.accepts_submissions ? "Ainda aceita envios" : "Encerrado";
-      return `
+  container.innerHTML = encerrados
+    .map(
+      (b) => `
         <div class="arquivo__item">
           <div class="arquivo__info">
-            <p>${escapeHtml(b.product)} — ${escapeHtml(b.title)}</p>
-            <p>Encerrou em ${formatDate(b.ends_at)}</p>
+            <p>${escapeHtml(b.titulo)}</p>
+            <p>Encerrou em ${formatDate(b.prazo)}</p>
           </div>
           <div class="arquivo__actions">
-            <span class="badge-status ${statusClass}">${statusText}</span>
-            <a class="arquivo__link" href="${encodeURI(b.pdf_url)}" target="_blank" rel="noopener">Ver PDF</a>
+            <span class="badge-status badge-status--encerrado">Envio ainda ativo</span>
+            <button type="button" class="arquivo__link" data-briefing-id="${escapeHtml(b.id)}">Ver detalhes</button>
           </div>
         </div>
-      `;
-    })
+      `
+    )
     .join("");
+
+  container.querySelectorAll(".arquivo__link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const briefing = BRIEFINGS.find((b) => b.id === btn.dataset.briefingId);
+      if (briefing) openBriefingModal(briefing);
+    });
+  });
 }
 
 function renderCampanhas(config) {
   const section = document.getElementById("campanhas-section");
   const container = document.getElementById("campanhas-ativas");
-  const campanhas = config.active_campaigns || [];
+  const campanhas = (config && config.active_campaigns) || [];
 
   if (campanhas.length === 0) {
     section.hidden = true;
@@ -156,31 +199,100 @@ function renderCampanhas(config) {
     .join("");
 }
 
-function populateBriefingSelect(config) {
+/* ---------- MODAL DE BRIEFING ---------- */
+
+function setupModal() {
+  const overlay = document.getElementById("briefing-modal");
+  const closeBtn = document.getElementById("modal-close");
+
+  closeBtn.addEventListener("click", closeBriefingModal);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeBriefingModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !overlay.hidden) closeBriefingModal();
+  });
+}
+
+function openBriefingModal(briefing) {
+  const overlay = document.getElementById("briefing-modal");
+  const body = document.getElementById("modal-body");
+
+  const destaques = (briefing.destaques || [])
+    .map((d) => `<li>${escapeHtml(d)}</li>`)
+    .join("");
+
+  body.innerHTML = `
+    ${briefing.plataforma ? `<p class="briefing__product">${escapeHtml(briefing.plataforma)}</p>` : ""}
+    <h2 id="modal-title" class="briefing__title briefing__title--dark">${escapeHtml(briefing.titulo)}</h2>
+    ${briefing.prazo ? `<p class="briefing__deadline">Envie até ${formatDate(briefing.prazo)}</p>` : ""}
+    ${briefing.descricao ? `<p class="modal__descricao">${escapeHtml(briefing.descricao)}</p>` : ""}
+    ${destaques ? `<ul class="highlight-list highlight-list--dark">${destaques}</ul>` : ""}
+    <a class="btn btn--dark btn--full" href="#formulario" id="modal-cta">Enviar conteúdo pra esse briefing</a>
+  `;
+
+  document.getElementById("modal-cta").addEventListener("click", () => {
+    closeBriefingModal();
+    const briefingSelect = document.getElementById("briefing_ref");
+    const seguiuSim = document.getElementById("seguiu-sim");
+    if (seguiuSim) {
+      seguiuSim.checked = true;
+      seguiuSim.dispatchEvent(new Event("change"));
+    }
+    if (briefingSelect) briefingSelect.value = briefing.id;
+  });
+
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeBriefingModal() {
+  const overlay = document.getElementById("briefing-modal");
+  overlay.hidden = true;
+  document.body.style.overflow = "";
+}
+
+/* ---------- SELECTS DO FORMULÁRIO ---------- */
+
+function populateBriefingSelect(list) {
   const select = document.getElementById("briefing_ref");
-  const options = [];
-
-  if (config.active_briefing) {
-    options.push({ id: config.active_briefing.id, label: `${config.active_briefing.product} — ${config.active_briefing.title} (semana atual)` });
-  }
-  (config.past_briefings || [])
-    .filter((b) => b.accepts_submissions)
-    .forEach((b) => options.push({ id: b.id, label: `${b.product} — ${b.title}` }));
-
-  options.forEach((opt) => {
+  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+  list.forEach((b) => {
     const el = document.createElement("option");
-    el.value = opt.id;
-    el.textContent = opt.label;
+    el.value = b.id;
+    el.textContent = isPast(b.prazo) ? b.titulo : `${b.titulo} (semana atual)`;
     select.appendChild(el);
   });
 }
 
-/* ---------- ESTADO "JÁ ENVIEI PRO BRIEFING ATUAL" ----------
-   Solução simples de P0 (seção 2.3 do UX-STUDY): sem login, guarda
-   no localStorage o último briefing_id enviado por este dispositivo/
-   navegador e troca o CTA por uma confirmação, fechando o loop.
-   Não substitui identificação real da creator — é um resolvedor
-   provisório até o dev validar uma alternativa com dado de sessão. */
+function populateCategoriaSelect(categorias) {
+  const select = document.getElementById("categoria_produto");
+  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+  categorias.forEach((cat) => {
+    const el = document.createElement("option");
+    el.value = cat.id;
+    el.textContent = cat.nome;
+    select.appendChild(el);
+  });
+
+  select.addEventListener("change", () => {
+    populateProdutoSelect(select.value);
+    revealField("bloco-produto", true);
+  });
+}
+
+function populateProdutoSelect(categoriaId) {
+  const select = document.getElementById("produto_nome");
+  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+  PRODUTOS.filter((p) => p.categoria_id === categoriaId).forEach((p) => {
+    const el = document.createElement("option");
+    el.value = p.nome;
+    el.textContent = p.nome;
+    select.appendChild(el);
+  });
+}
+
+/* ---------- ESTADO "JÁ ENVIEI PRO BRIEFING ATUAL" ---------- */
 
 function getLastSubmission() {
   try {
@@ -191,6 +303,7 @@ function getLastSubmission() {
 }
 
 function setLastSubmission(briefingId) {
+  if (!briefingId) return;
   try {
     localStorage.setItem(SUBMISSION_STORAGE_KEY, JSON.stringify({ briefing_id: briefingId, submitted_at: new Date().toISOString() }));
   } catch {
@@ -198,14 +311,15 @@ function setLastSubmission(briefingId) {
   }
 }
 
-function applyAlreadySubmittedState(config) {
-  const activeBriefing = config.active_briefing;
-  if (!activeBriefing) return;
+function applyAlreadySubmittedState(list) {
+  const vigentes = briefingsVigentes(list);
+  if (vigentes.length === 0) return;
 
   const last = getLastSubmission();
-  if (!last || last.briefing_id !== activeBriefing.id) return;
+  if (!last) return;
 
-  showAlreadySubmitted(activeBriefing);
+  const match = vigentes.find((b) => b.id === last.briefing_id);
+  if (match) showAlreadySubmitted(match);
 }
 
 function showAlreadySubmitted(briefing) {
@@ -215,13 +329,23 @@ function showAlreadySubmitted(briefing) {
   if (wrap) {
     wrap.innerHTML = `
       <div class="form-card form-card--done">
-        <p>Seu envio para <strong>${escapeHtml(briefing.product)}</strong> está com a gente — assim que aparecer no mural, ele passa a valer como prova. Se precisar de algum ajuste, nosso time chama você no WhatsApp informado.</p>
+        <p>Seu envio para <strong>${escapeHtml(briefing.titulo)}</strong> está com a gente — assim que aparecer no mural, ele passa a valer como prova. Se precisar de algum ajuste, nosso time chama você no WhatsApp informado.</p>
       </div>
     `;
   }
 }
 
-/* ---------- FORMULÁRIO ---------- */
+/* ---------- FORMULÁRIO PROGRESSIVO ----------
+   Campos são revelados conforme a creator responde:
+   1) identificação (sempre visível)
+   2) seguiu briefing? sim -> seleciona briefing
+                        não -> seleciona categoria -> produto
+   3) plataforma, link, consentimento, boost (+ adcode condicional) */
+
+function revealField(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.hidden = !show;
+}
 
 function setupForm() {
   const form = document.getElementById("creator-form");
@@ -230,7 +354,24 @@ function setupForm() {
   const adcodeField = document.getElementById("adcode-field");
   const adcodeInput = document.getElementById("adcode");
 
-  // Lógica condicional: adcode só aparece/obrigatório se boost = sim
+  form.querySelectorAll('input[name="seguiu_briefing"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      const seguiu = form.querySelector('input[name="seguiu_briefing"]:checked')?.value;
+      const sim = seguiu === "sim";
+      const nao = seguiu === "nao";
+
+      revealField("bloco-briefing", sim);
+      revealField("bloco-categoria", nao);
+      revealField("bloco-produto", false); // só aparece depois de escolher categoria
+      if (nao) document.getElementById("categoria_produto").value = "";
+
+      revealField("bloco-plataforma", sim || nao);
+      revealField("bloco-link", sim || nao);
+      revealField("bloco-consentimento", sim || nao);
+      revealField("bloco-boost", sim || nao);
+    });
+  });
+
   form.querySelectorAll('input[name="boost"]').forEach((radio) => {
     radio.addEventListener("change", () => {
       const boostSim = form.querySelector('input[name="boost"]:checked')?.value === "sim";
@@ -259,13 +400,15 @@ function setupForm() {
 
     try {
       await submitToBackend(data);
-      setLastSubmission(data.briefing_ref);
+      if (data.seguiu_briefing === "sim") setLastSubmission(data.briefing_ref);
       form.reset();
+      ["bloco-briefing", "bloco-categoria", "bloco-produto", "bloco-plataforma", "bloco-link", "bloco-consentimento", "bloco-boost"].forEach((id) => revealField(id, false));
       adcodeField.hidden = true;
       feedback.textContent = "Recebemos seu conteúdo. Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado.";
       feedback.dataset.state = "success";
-      if (CONFIG?.active_briefing && data.briefing_ref === CONFIG.active_briefing.id) {
-        showAlreadySubmitted(CONFIG.active_briefing);
+      if (data.seguiu_briefing === "sim") {
+        const match = BRIEFINGS.find((b) => b.id === data.briefing_ref);
+        if (match) showAlreadySubmitted(match);
       }
     } catch (err) {
       feedback.textContent = "Algo não saiu como esperado. Tenta enviar de novo em alguns instantes.";
@@ -278,13 +421,17 @@ function setupForm() {
 
 function getFormData(form) {
   const boostChecked = form.querySelector('input[name="boost"]:checked');
+  const seguiuChecked = form.querySelector('input[name="seguiu_briefing"]:checked');
   return {
     nome: form.nome.value.trim(),
     email: form.email.value.trim(),
     whatsapp: form.whatsapp.value.trim(),
     codigo: form.codigo.value.trim(),
     instagram: form.instagram.value.trim().replace(/^@+/, ""),
+    seguiu_briefing: seguiuChecked ? seguiuChecked.value : "",
     briefing_ref: form.briefing_ref.value,
+    categoria_produto: form.categoria_produto.value,
+    produto_nome: form.produto_nome.value,
     plataforma: form.plataforma.value,
     link: form.link.value.trim(),
     consentimento: form.consentimento.checked,
@@ -306,7 +453,21 @@ function validate(data) {
   if (!data.whatsapp) errors.whatsapp = REQUIRED_MSG;
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
   if (!data.instagram) errors.instagram = "Informe seu @ do Instagram.";
-  if (!data.briefing_ref) errors.briefing_ref = "Selecione a qual briefing esse conteúdo se refere.";
+
+  if (!data.seguiu_briefing) {
+    errors.seguiu_briefing = "Escolha sim ou não.";
+    return errors; // sem essa resposta, não valida os campos condicionais ainda
+  }
+
+  if (data.seguiu_briefing === "sim" && !data.briefing_ref) {
+    errors.briefing_ref = "Selecione a qual briefing esse conteúdo se refere.";
+  }
+
+  if (data.seguiu_briefing === "nao") {
+    if (!data.categoria_produto) errors.categoria_produto = "Selecione a categoria do produto.";
+    if (!data.produto_nome) errors.produto_nome = "Selecione o produto.";
+  }
+
   if (!data.plataforma) errors.plataforma = REQUIRED_MSG;
 
   if (!data.link) {
@@ -356,8 +517,15 @@ function setLoading(button, isLoading) {
 
 /* payload no formato da tabela aura_hub_submissions (Supabase) */
 function buildPayload(data) {
+  const produtoLabel = data.categoria_produto
+    ? CATEGORIAS.find((c) => c.id === data.categoria_produto)?.nome || null
+    : null;
+
   return {
-    briefing_id: data.briefing_ref,
+    briefing_id: data.seguiu_briefing === "sim" ? data.briefing_ref : null,
+    seguiu_briefing: data.seguiu_briefing === "sim",
+    categoria_produto: produtoLabel,
+    produto_nome: data.seguiu_briefing === "nao" ? data.produto_nome : null,
     submitted_at: new Date().toISOString(),
     creator_name: data.nome,
     creator_email: data.email,
