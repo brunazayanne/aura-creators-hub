@@ -228,6 +228,7 @@ function openBriefingModal(briefing) {
     ${briefing.prazo ? `<p class="briefing__deadline">Envie até ${formatDate(briefing.prazo)}</p>` : ""}
     ${briefing.descricao ? `<p class="modal__descricao">${escapeHtml(briefing.descricao)}</p>` : ""}
     ${destaques ? `<ul class="highlight-list highlight-list--dark">${destaques}</ul>` : ""}
+    ${briefing.pdf_url ? `<a class="btn btn--outline btn--full" href="${encodeURI(briefing.pdf_url)}" target="_blank" rel="noopener" style="margin-bottom:12px;">Baixar briefing completo (PDF)</a>` : ""}
     <a class="btn btn--dark btn--full" href="#formulario" id="modal-cta">Enviar conteúdo pra esse briefing</a>
   `;
 
