@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AURA Creators Content Hub — Seu próximo conteúdo começa aqui</title>
-<meta name="description" content="Veja o briefing da semana, se inspire, grave seu conteúdo e apareça no mural das creators AURA. A central de briefings e captação de conteúdo do AURA Creators Club.">
+<meta name="description" content="Veja os briefings da semana, envie seu conteúdo e apareça no mural das creators AURA. A central de briefings e captação de conteúdo do AURA Creators Club.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -29,27 +29,32 @@
     <div class="hero__inner">
       <span class="eyebrow">Content Hub</span>
       <h1 id="hero-title" class="hero__title">Seu próximo conteúdo começa aqui.</h1>
-      <p class="hero__subtitle">Toda semana tem um produto em foco, um briefing novo e uma oportunidade de aparecer. Veja o que gravar, se inspire em quem já publicou e envie seu link aqui — assim, a gente consegue acompanhar o seu conteúdo e impulsionar ele pra aumentar o seu resultado.</p>
+      <p class="hero__subtitle">Toda semana tem briefings novos e uma oportunidade de aparecer. Veja o que gravar, confira quem já publicou no mural e envie seu link aqui — assim, a gente consegue acompanhar o seu conteúdo e impulsionar ele pra aumentar o seu resultado.</p>
       <a class="btn btn--primary btn--full" href="#formulario">Enviar meu conteúdo</a>
     </div>
   </section>
 
-  <!-- BRIEFING DA SEMANA (DESTAQUE) -->
-  <section class="section section--dark" id="briefing-destaque-section" aria-labelledby="briefing-title">
-    <div class="section__inner" id="briefing-destaque">
-      <p class="briefing__loading">Carregando o briefing da semana…</p>
+  <!-- BRIEFINGS DA SEMANA (MÚLTIPLOS) -->
+  <section class="section section--dark" id="briefings-semana-section" aria-labelledby="briefings-semana-title">
+    <div class="section__inner">
+      <span class="eyebrow eyebrow--dark">Briefings da semana</span>
+      <h2 id="briefings-semana-title" class="section__title section__title--light">O que gravar agora</h2>
+      <p class="section__text section__text--light">Toque em um briefing pra ver os detalhes completos.</p>
+      <div class="briefings-grid" id="briefings-semana" aria-live="polite">
+        <p class="briefing__loading">Carregando os briefings da semana…</p>
+      </div>
     </div>
   </section>
 
-  <!-- INSPIRE-SE -->
-  <section class="section section--flush" aria-labelledby="inspira-title">
+  <!-- MURAL DE CREATORS (VITRINE) -->
+  <section class="section section--flush" aria-labelledby="mural-title">
     <div class="section__inner section__inner--flush-h">
-      <span class="eyebrow">Inspire-se</span>
-      <h2 id="inspira-title" class="section__title">O que as creators estão criando</h2>
-      <p class="section__microcopy">Referências de conteúdo aprovado pra te dar uma direção antes de gravar o seu.</p>
+      <span class="eyebrow">Vitrine</span>
+      <h2 id="mural-title" class="section__title">Quem já está participando</h2>
+      <p class="section__microcopy">Cada card aqui é uma creator que já enviou conteúdo. Bora aparecer também?</p>
     </div>
-    <div class="inspira" id="inspira" aria-live="polite">
-      <p class="inspira__loading">Carregando referências…</p>
+    <div class="mural" id="mural" aria-live="polite">
+      <p class="mural__loading">Carregando participantes…</p>
     </div>
   </section>
 
@@ -61,15 +66,15 @@
         <li class="step">
           <img class="step__icon" src="assets/icon-conteudo.png" alt="" aria-hidden="true">
           <div>
-            <p class="step__title">Veja o briefing da semana</p>
-            <p class="step__desc">Confira o produto em foco e as regras de gravação logo acima.</p>
+            <p class="step__title">Veja os briefings da semana</p>
+            <p class="step__desc">Confira os produtos em foco e as regras de gravação logo acima.</p>
           </div>
         </li>
         <li class="step">
           <img class="step__icon" src="assets/icon-inscreva-se.png" alt="" aria-hidden="true">
           <div>
             <p class="step__title">Grave e poste</p>
-            <p class="step__desc">Siga o direcional do briefing e publique no Instagram ou TikTok.</p>
+            <p class="step__desc">Siga o direcional do briefing (ou não, se for por sua conta) e publique no Instagram ou TikTok.</p>
           </div>
         </li>
         <li class="step">
@@ -83,39 +88,8 @@
     </div>
   </section>
 
-  <!-- MURAL DE CREATORS -->
-  <section class="section section--flush" aria-labelledby="mural-title">
-    <div class="section__inner section__inner--flush-h">
-      <span class="eyebrow">Vitrine</span>
-      <h2 id="mural-title" class="section__title">Quem já está participando</h2>
-      <p class="section__microcopy">Cada card aqui é uma creator que já enviou conteúdo. Bora aparecer também?</p>
-    </div>
-    <div class="mural" id="mural" aria-live="polite">
-      <p class="mural__loading">Carregando participantes…</p>
-    </div>
-  </section>
-
-  <!-- BRIEFINGS ANTERIORES (ARQUIVO) -->
-  <section class="section section--muted" aria-labelledby="arquivo-title">
-    <div class="section__inner">
-      <h2 id="arquivo-title" class="section__title">Briefings anteriores</h2>
-      <p class="section__microcopy">Ainda dá tempo de enviar conteúdo de algumas semanas passadas — confira abaixo.</p>
-      <div class="arquivo" id="briefings-arquivo">
-        <p class="arquivo__loading">Carregando…</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- CAMPANHAS ATIVAS (condicional) -->
-  <section class="section" id="campanhas-section" aria-labelledby="campanhas-title" hidden>
-    <div class="section__inner">
-      <h2 id="campanhas-title" class="section__title">Campanhas ativas</h2>
-      <div class="campanhas" id="campanhas-ativas"></div>
-    </div>
-  </section>
-
   <!-- FORMULÁRIO -->
-  <section class="section section--muted" id="formulario" aria-labelledby="form-title">
+  <section class="section" id="formulario" aria-labelledby="form-title">
     <div class="section__inner">
       <h2 id="form-title" class="section__title">Envie seu conteúdo</h2>
       <p class="section__text" id="formulario-intro">Preencha os dados abaixo e cole o link do seu post.</p>
@@ -142,8 +116,8 @@
         </div>
 
         <div class="field">
-          <label for="codigo">Código de creator / cupom *</label>
-          <input type="text" id="codigo" name="codigo" placeholder="Ex: AURA10" required>
+          <label for="codigo">Seu cupom *</label>
+          <input type="text" id="codigo" name="codigo" placeholder="Cupom cadastrado no AURA Creators Club" required>
           <span class="field__error" data-error-for="codigo"></span>
         </div>
 
@@ -153,37 +127,68 @@
           <span class="field__error" data-error-for="instagram"></span>
         </div>
 
-        <div class="field">
-          <label for="briefing_ref">Esse conteúdo é referente a qual briefing? *</label>
-          <select id="briefing_ref" name="briefing_ref" required>
+        <fieldset class="field field--fieldset">
+          <legend>Você seguiu um briefing da semana pra esse conteúdo? *</legend>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="seguiu_briefing" value="sim" id="seguiu-sim"> Sim</label>
+            <label class="radio-option"><input type="radio" name="seguiu_briefing" value="nao" id="seguiu-nao"> Não</label>
+          </div>
+          <span class="field__error" data-error-for="seguiu_briefing"></span>
+        </fieldset>
+
+        <!-- Bloco: seguiu briefing -->
+        <div class="field field--reveal" id="bloco-briefing" hidden>
+          <label for="briefing_ref">Qual briefing você gravou? *</label>
+          <select id="briefing_ref" name="briefing_ref">
             <option value="" disabled selected>Selecione</option>
           </select>
           <span class="field__error" data-error-for="briefing_ref"></span>
         </div>
 
-        <div class="field">
-          <label for="plataforma">Plataforma *</label>
-          <select id="plataforma" name="plataforma" required>
+        <!-- Bloco: não seguiu briefing -->
+        <div class="field field--reveal" id="bloco-categoria" hidden>
+          <label for="categoria_produto">Qual categoria de produto? *</label>
+          <select id="categoria_produto" name="categoria_produto">
+            <option value="" disabled selected>Selecione</option>
+          </select>
+          <span class="field__error" data-error-for="categoria_produto"></span>
+        </div>
+
+        <div class="field field--reveal" id="bloco-produto" hidden>
+          <label for="produto_nome">Com qual produto você gravou? *</label>
+          <select id="produto_nome" name="produto_nome">
+            <option value="" disabled selected>Selecione</option>
+          </select>
+          <span class="field__error" data-error-for="produto_nome"></span>
+        </div>
+
+        <!-- Campos comuns, revelados após identificar briefing ou produto -->
+        <div class="field field--reveal" id="bloco-plataforma" hidden>
+          <label for="plataforma">Selecione a plataforma do conteúdo postado *</label>
+          <select id="plataforma" name="plataforma">
             <option value="" disabled selected>Selecione</option>
             <option value="instagram">Instagram (Reels)</option>
+            <option value="instagram_story">Instagram (Story)</option>
             <option value="tiktok">TikTok</option>
+            <option value="youtube_shorts">YouTube (Shorts)</option>
+            <option value="youtube_longo">YouTube (Conteúdo longo)</option>
           </select>
           <span class="field__error" data-error-for="plataforma"></span>
         </div>
 
-        <div class="field">
+        <div class="field field--reveal" id="bloco-link" hidden>
           <label for="link">Link do conteúdo *</label>
-          <input type="url" id="link" name="link" placeholder="Cole aqui o link do seu post" required>
+          <input type="url" id="link" name="link" placeholder="Cole aqui o link do seu post">
           <span class="field__error" data-error-for="link"></span>
         </div>
 
-        <div class="field field--checkbox">
-          <input type="checkbox" id="consentimento" name="consentimento" required>
-          <label for="consentimento">Autorizo a AURA a exibir meu nome e @ no mural de participantes. *</label>
+        <div class="field field--checkbox field--reveal" id="bloco-consentimento" hidden>
+          <input type="checkbox" id="consentimento" name="consentimento">
+          <label for="consentimento">Autorizo a AURA a exibir meu nome e @ no mural de participantes.</label>
           <span class="field__error" data-error-for="consentimento"></span>
         </div>
 
-        <fieldset class="field field--fieldset">
+        <fieldset class="field field--fieldset field--reveal" id="bloco-boost" hidden>
           <legend>Autorizo a AURA a impulsionar esse conteúdo? *</legend>
           <div class="radio-group">
             <label class="radio-option"><input type="radio" name="boost" value="sim" id="boost-sim"> Sim</label>
@@ -207,6 +212,25 @@
     </div>
   </section>
 
+  <!-- BRIEFINGS ANTERIORES (ARQUIVO) -->
+  <section class="section section--muted" aria-labelledby="arquivo-title">
+    <div class="section__inner">
+      <h2 id="arquivo-title" class="section__title">Briefings anteriores</h2>
+      <p class="section__microcopy">Ainda dá tempo de enviar conteúdo de algumas semanas passadas — confira abaixo.</p>
+      <div class="arquivo" id="briefings-arquivo">
+        <p class="arquivo__loading">Carregando…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMPANHAS ATIVAS (condicional) -->
+  <section class="section section--muted" id="campanhas-section" aria-labelledby="campanhas-title" hidden>
+    <div class="section__inner">
+      <h2 id="campanhas-title" class="section__title">Campanhas ativas</h2>
+      <div class="campanhas" id="campanhas-ativas"></div>
+    </div>
+  </section>
+
   <!-- FAQ -->
   <section class="section" aria-labelledby="faq-title">
     <div class="section__inner">
@@ -218,8 +242,12 @@
           <p>Não é obrigatório, mas cada briefing tem um prazo — depois que ele encerra, o envio some da lista. Fica de olho no hub pra não perder a janela.</p>
         </details>
         <details class="accordion__item">
+          <summary>Posso enviar conteúdo sem seguir um briefing?</summary>
+          <p>Sim! Se você gravou algo por conta própria, é só indicar a categoria e o produto no formulário.</p>
+        </details>
+        <details class="accordion__item">
           <summary>Que tipo de conteúdo vale?</summary>
-          <p>Reels (Instagram) ou vídeos no TikTok que sigam o briefing do produto em foco na semana.</p>
+          <p>Reels (Instagram) ou vídeos no TikTok, seguindo um briefing ativo ou apresentando um produto AURA.</p>
         </details>
         <details class="accordion__item">
           <summary>Posso enviar conteúdo de um briefing antigo?</summary>
@@ -250,12 +278,20 @@
     <div class="section__inner">
       <img class="hero-mandala-small" src="assets/mandala-mini-1.svg" alt="" aria-hidden="true">
       <h2 id="cta-final-title" class="section__title section__title--light">Seu próximo conteúdo já pode estar no ar.</h2>
-      <p class="section__text section__text--light">Veja o briefing, se inspire, grave e envie o link — leva menos de 2 minutos.</p>
+      <p class="section__text section__text--light">Veja os briefings, grave e envie o link — leva menos de 2 minutos.</p>
       <a class="btn btn--primary btn--full" href="#formulario">Enviar meu conteúdo</a>
     </div>
   </section>
 
 </main>
+
+<!-- MODAL: DETALHE DO BRIEFING -->
+<div class="modal-overlay" id="briefing-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button type="button" class="modal__close" id="modal-close" aria-label="Fechar">&times;</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer class="footer">
