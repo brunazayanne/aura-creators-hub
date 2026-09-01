@@ -284,7 +284,7 @@ function populateCategoriaSelect(categorias) {
 
 function populateProdutoSelect(categoriaId) {
   const select = document.getElementById("produto_nome");
-  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
+  select.innerHTML = '<option value="" disabled selected>Identifique o produto</option>';
   PRODUTOS.filter((p) => p.categoria_id === categoriaId).forEach((p) => {
     const el = document.createElement("option");
     el.value = p.nome;
@@ -477,7 +477,6 @@ function validate(data) {
     errors.link = "Não conseguimos reconhecer esse link. Confira se copiou o endereço completo do post.";
   }
 
-  if (!data.consentimento) errors.consentimento = REQUIRED_MSG;
   if (!data.boost) errors.boost = "Escolha sim ou não pra autorização de impulsionamento.";
   if (data.boost === "sim" && !data.adcode) errors.adcode = "Informe o adcode desse conteúdo.";
 
@@ -492,9 +491,10 @@ function isValidContentLink(url, plataforma) {
     return false;
   }
   const host = parsed.hostname.replace("www.", "");
-  if (plataforma === "instagram") return host.includes("instagram.com");
+  if (plataforma === "instagram" || plataforma === "instagram_story") return host.includes("instagram.com");
   if (plataforma === "tiktok") return host.includes("tiktok.com");
-  return /instagram\.com|tiktok\.com/.test(host);
+  if (plataforma === "youtube_shorts" || plataforma === "youtube_longo") return host.includes("youtube.com") || host.includes("youtu.be");
+  return /instagram\.com|tiktok\.com|youtube\.com|youtu\.be/.test(host);
 }
 
 function showErrors(errors) {
@@ -629,7 +629,9 @@ function renderMural(container, creators) {
 }
 
 function plataformaLabel(plataforma) {
-  return plataforma === "tiktok" ? "TikTok" : "Instagram";
+  if (plataforma === "tiktok") return "TikTok";
+  if (plataforma === "youtube_shorts" || plataforma === "youtube_longo") return "YouTube";
+  return "Instagram";
 }
 
 function escapeHtml(str) {
