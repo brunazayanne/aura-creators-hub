@@ -38,6 +38,7 @@
       <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
       <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias e produtos</button>
       <button type="button" class="admin-tab" data-tab="submissoes" aria-selected="false">Submissões</button>
+      <button type="button" class="admin-tab" data-tab="relatorio" aria-selected="false">Relatório</button>
     </div>
 
     <!-- BRIEFINGS -->
@@ -100,6 +101,32 @@
         <h2>Submissões recebidas</h2>
         <p class="section__microcopy" style="margin-bottom:16px;">Aprove pra publicar no mural e suba a imagem que representa o conteúdo.</p>
         <div class="admin-list" id="s-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- RELATÓRIO -->
+    <section class="admin-panel" data-panel="relatorio">
+      <div class="admin-card">
+        <h2>Visão geral</h2>
+        <div class="admin-kpis" id="r-kpis"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Submissões por plataforma</h2>
+        <div class="admin-list" id="r-plataforma"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Submissões por briefing</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Quais briefings estão gerando mais conteúdo.</p>
+        <div class="admin-list" id="r-briefing"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Ranking de creators</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Quem mais enviou conteúdo (por cupom).</p>
+        <div class="admin-list" id="r-ranking"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Cruzamento com vendas</h2>
+        <p class="section__microcopy">Ainda não conectado. Ver observação abaixo antes de priorizar.</p>
       </div>
     </section>
   </div>
