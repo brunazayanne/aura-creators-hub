@@ -36,8 +36,8 @@
   <div class="admin-wrap">
     <div class="admin-tabs" role="tablist">
       <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
-      <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
-      <button type="button" class="admin-tab" data-tab="produtos" aria-selected="false">Produtos</button>
+      <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias e produtos</button>
+      <button type="button" class="admin-tab" data-tab="submissoes" aria-selected="false">Submissões</button>
     </div>
 
     <!-- BRIEFINGS -->
@@ -94,24 +94,12 @@
       </div>
     </section>
 
-    <!-- PRODUTOS -->
-    <section class="admin-panel" data-panel="produtos">
+    <!-- SUBMISSÕES -->
+    <section class="admin-panel" data-panel="submissoes">
       <div class="admin-card">
-        <h2>Novo produto</h2>
-        <div class="admin-form-row">
-          <div class="field"><label>Categoria *</label><select id="p-categoria"></select></div>
-          <div class="field"><label>Nome do produto *</label><input type="text" id="p-nome" placeholder="Ex: Body Splash Afrodite"></div>
-        </div>
-        <div class="admin-form-row">
-          <div class="field"><label>URL da imagem</label><input type="url" id="p-imagem" placeholder="https://..."></div>
-          <div class="field"><label>Ordem de exibição</label><input type="number" id="p-ordem" value="0"></div>
-        </div>
-        <button type="button" class="btn btn--primary" id="p-add">Adicionar produto</button>
-        <p class="admin-feedback" id="p-feedback"></p>
-      </div>
-      <div class="admin-card">
-        <h2>Produtos cadastrados</h2>
-        <div class="admin-list" id="p-list"><p class="admin-empty">Carregando…</p></div>
+        <h2>Submissões recebidas</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Aprove pra publicar no mural e suba a imagem que representa o conteúdo.</p>
+        <div class="admin-list" id="s-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
   </div>
