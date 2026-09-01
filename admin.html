@@ -46,7 +46,14 @@
         <h2>Novo briefing</h2>
         <div class="admin-form-row">
           <div class="field"><label>Título *</label><input type="text" id="b-titulo" placeholder="Ex: Musas de AURA"></div>
-          <div class="field"><label>Plataforma</label><input type="text" id="b-plataforma" placeholder="Ex: Reels e TikTok"></div>
+          <div class="field">
+            <label>Plataforma</label>
+            <div class="radio-group" id="b-plataforma-group">
+              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="Reels"> Reels</label>
+              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="TikTok"> TikTok</label>
+              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="Story"> Story</label>
+            </div>
+          </div>
         </div>
         <div class="admin-form-row">
           <div class="field"><label>Prazo</label><input type="date" id="b-prazo"></div>
