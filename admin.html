@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA Creators Hub — Gerenciar conteúdo</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-body">
+
+<!-- LOGIN -->
+<div class="admin-login" id="login-box">
+  <h1>Entrar no painel</h1>
+  <div class="field">
+    <label for="login-email">E-mail</label>
+    <input type="email" id="login-email" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="login-password">Senha</label>
+    <input type="password" id="login-password" autocomplete="current-password">
+  </div>
+  <button type="button" class="btn btn--dark btn--full" id="login-btn">Entrar</button>
+  <p class="admin-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+</div>
+
+<!-- PAINEL (só aparece autenticado) -->
+<div id="admin-app" hidden>
+  <header class="admin-header">
+    <h1>AURA Creators Hub — Conteúdo</h1>
+    <button type="button" class="btn btn--small btn--outline-light" id="logout-btn">Sair</button>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
+      <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
+      <button type="button" class="admin-tab" data-tab="produtos" aria-selected="false">Produtos</button>
+    </div>
+
+    <!-- BRIEFINGS -->
+    <section class="admin-panel" data-panel="briefings" data-active="true">
+      <div class="admin-card">
+        <h2>Novo briefing</h2>
+        <div class="admin-form-row">
+          <div class="field"><label>Título *</label><input type="text" id="b-titulo" placeholder="Ex: Musas de AURA"></div>
+          <div class="field"><label>Plataforma</label><input type="text" id="b-plataforma" placeholder="Ex: Reels e TikTok"></div>
+        </div>
+        <div class="admin-form-row">
+          <div class="field"><label>Prazo</label><input type="date" id="b-prazo"></div>
+          <div class="field"><label>Ordem de exibição</label><input type="number" id="b-ordem" value="0"></div>
+        </div>
+        <div class="admin-form-row admin-form-row--full">
+          <div class="field"><label>Descrição (aparece no modal)</label><textarea id="b-descricao" rows="3" style="font-family:var(--font);font-size:14px;padding:12px 14px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);"></textarea></div>
+        </div>
+        <div class="admin-form-row admin-form-row--full">
+          <div class="field"><label>Destaques (um por linha)</label><textarea id="b-destaques" rows="3" style="font-family:var(--font);font-size:14px;padding:12px 14px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);"></textarea></div>
+        </div>
+        <button type="button" class="btn btn--primary" id="b-add">Adicionar briefing</button>
+        <p class="admin-feedback" id="b-feedback"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Briefings cadastrados</h2>
+        <div class="admin-list" id="b-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- CATEGORIAS -->
+    <section class="admin-panel" data-panel="categorias">
+      <div class="admin-card">
+        <h2>Nova categoria</h2>
+        <div class="admin-form-row">
+          <div class="field"><label>Nome *</label><input type="text" id="c-nome" placeholder="Ex: Body Splash"></div>
+          <div class="field"><label>Ordem de exibição</label><input type="number" id="c-ordem" value="0"></div>
+        </div>
+        <button type="button" class="btn btn--primary" id="c-add">Adicionar categoria</button>
+        <p class="admin-feedback" id="c-feedback"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Categorias cadastradas</h2>
+        <div class="admin-list" id="c-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="admin-panel" data-panel="produtos">
+      <div class="admin-card">
+        <h2>Novo produto</h2>
+        <div class="admin-form-row">
+          <div class="field"><label>Categoria *</label><select id="p-categoria"></select></div>
+          <div class="field"><label>Nome do produto *</label><input type="text" id="p-nome" placeholder="Ex: Body Splash Afrodite"></div>
+        </div>
+        <div class="admin-form-row">
+          <div class="field"><label>URL da imagem</label><input type="url" id="p-imagem" placeholder="https://..."></div>
+          <div class="field"><label>Ordem de exibição</label><input type="number" id="p-ordem" value="0"></div>
+        </div>
+        <button type="button" class="btn btn--primary" id="p-add">Adicionar produto</button>
+        <p class="admin-feedback" id="p-feedback"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Produtos cadastrados</h2>
+        <div class="admin-list" id="p-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
