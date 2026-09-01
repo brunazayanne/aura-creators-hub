@@ -20,7 +20,7 @@
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
-const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted&order=created_at.desc`;
+const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted,content_url&order=created_at.desc`;
 const BRIEFINGS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_briefings?select=*&ativo=eq.true&order=ordem.asc`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const PRODUTOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_produtos?select=*&ativo=eq.true&order=ordem.asc`;
@@ -600,9 +600,15 @@ function renderMural(container, creators) {
       const handle = (c.instagram_handle || "").replace(/^@+/, "");
       const profileUrl = handle ? `https://instagram.com/${encodeURIComponent(handle)}` : null;
       const hasThumb = Boolean(c.thumb_url);
-      const thumb = hasThumb
+      const thumbImg = hasThumb
         ? `<img class="mural__thumb" src="${encodeURI(c.thumb_url)}" alt="Conteúdo de ${escapeHtml(c.nome)}" loading="lazy">`
         : `<div class="mural__thumb">${plataformaLabel(c.plataforma)}</div>`;
+      const thumb = c.content_url
+        ? `<a class="mural__thumb-link" href="${encodeURI(c.content_url)}" target="_blank" rel="noopener" aria-label="Ver conteúdo de ${escapeHtml(c.nome)} no ${plataformaLabel(c.plataforma)}">
+            ${thumbImg}
+            <span class="mural__play" aria-hidden="true">▶</span>
+          </a>`
+        : thumbImg;
 
       return `
         <div class="mural__card${hasThumb ? "" : " mural__card--no-thumb"}">
