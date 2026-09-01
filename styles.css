@@ -731,6 +731,26 @@ summary:focus-visible {
 .admin-tag--ok { background: var(--sucesso); color: var(--white); }
 .admin-tag--pending { background: var(--tan); color: var(--brown); }
 
+/* relatório */
+.admin-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.admin-kpi {
+  background: var(--offwhite);
+  border-radius: var(--radius-sm);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.admin-kpi__valor { font-size: 24px; font-weight: 800; color: var(--gold); line-height: 1; }
+.admin-kpi__label { font-size: 12px; color: var(--brown); opacity: 0.8; }
+.admin-row--metric { justify-content: space-between; }
+.admin-row__metric-value { font-weight: 700; color: var(--brown); flex-shrink: 0; }
+.admin-row__metric-pct { font-weight: 400; opacity: 0.7; }
+
+@media (min-width: 700px) {
+  .admin-kpis { grid-template-columns: repeat(4, 1fr); }
+}
+
 @media (min-width: 700px) {
   .admin-form-row { grid-template-columns: repeat(2, 1fr); }
   .admin-form-row--full { grid-template-columns: 1fr; }
