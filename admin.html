@@ -44,7 +44,7 @@
     <!-- BRIEFINGS -->
     <section class="admin-panel" data-panel="briefings" data-active="true">
       <div class="admin-card">
-        <h2>Novo briefing</h2>
+        <h2 id="b-form-title">Novo briefing</h2>
         <div class="admin-form-row">
           <div class="field"><label>Título *</label><input type="text" id="b-titulo" placeholder="Ex: Musas de AURA"></div>
           <div class="field">
@@ -68,8 +68,12 @@
         </div>
         <div class="admin-form-row admin-form-row--full">
           <div class="field"><label>PDF do briefing (opcional)</label><input type="file" id="b-pdf" accept="application/pdf"></div>
+          <p class="admin-empty" id="b-pdf-atual" style="display:none;margin-top:6px;"></p>
         </div>
-        <button type="button" class="btn btn--primary" id="b-add">Adicionar briefing</button>
+        <div class="admin-form-row--inline" style="display:flex;gap:10px;">
+          <button type="button" class="btn btn--primary" id="b-add">Adicionar briefing</button>
+          <button type="button" class="btn btn--small btn--outline-light" id="b-cancel-edit" style="display:none;">Cancelar edição</button>
+        </div>
         <p class="admin-feedback" id="b-feedback"></p>
       </div>
       <div class="admin-card">

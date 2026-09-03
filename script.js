@@ -491,6 +491,12 @@ function isValidContentLink(url, plataforma) {
     return false;
   }
   const host = parsed.hostname.replace("www.", "");
+
+  // Link de Drive (ou outro serviço de arquivo na nuvem) sempre vale,
+  // independente da plataforma — útil quando o post ainda não está
+  // no ar ou a creator prefere mandar o arquivo direto.
+  if (/drive\.google\.com|docs\.google\.com|dropbox\.com|1drv\.ms|onedrive\.live\.com/.test(host)) return true;
+
   if (plataforma === "instagram" || plataforma === "instagram_story") return host.includes("instagram.com");
   if (plataforma === "tiktok") return host.includes("tiktok.com");
   if (plataforma === "youtube_shorts" || plataforma === "youtube_longo") return host.includes("youtube.com") || host.includes("youtu.be");

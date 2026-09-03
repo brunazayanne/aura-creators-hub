@@ -17,6 +17,7 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let CATEGORIAS = [];
 let PRODUTOS = [];
 let BRIEFINGS = [];
+let editingBriefingId = null;
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -38,7 +39,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     tab.addEventListener("click", () => switchTab(tab.dataset.tab));
   });
 
-  document.getElementById("b-add").addEventListener("click", addBriefing);
+  document.getElementById("b-add").addEventListener("click", saveBriefing);
+  document.getElementById("b-cancel-edit").addEventListener("click", cancelEditBriefing);
   document.getElementById("c-add").addEventListener("click", addCategoria);
 });
 
@@ -131,6 +133,7 @@ async function loadBriefings() {
       <div class="admin-row${b.ativo ? "" : " admin-row--inativo"}">
         <span>${escapeHtml(b.titulo)}${b.prazo ? ` — até ${escapeHtml(b.prazo)}` : ""}</span>
         <div class="admin-row__actions">
+          <button data-action="edit" data-id="${b.id}">Editar</button>
           <button data-action="toggle" data-id="${b.id}" data-ativo="${b.ativo}">${b.ativo ? "Desativar" : "Ativar"}</button>
           <button class="danger" data-action="delete" data-id="${b.id}">Excluir</button>
         </div>
@@ -139,6 +142,9 @@ async function loadBriefings() {
     )
     .join("");
 
+  list.querySelectorAll('[data-action="edit"]').forEach((btn) =>
+    btn.addEventListener("click", () => startEditBriefing(btn.dataset.id))
+  );
   list.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
     btn.addEventListener("click", () => toggleBriefing(btn.dataset.id, btn.dataset.ativo === "true"))
   );
@@ -147,7 +153,55 @@ async function loadBriefings() {
   );
 }
 
-async function addBriefing() {
+function startEditBriefing(id) {
+  const briefing = BRIEFINGS.find((b) => b.id === id);
+  if (!briefing) return;
+
+  editingBriefingId = id;
+
+  document.getElementById("b-titulo").value = briefing.titulo || "";
+  const plataformas = (briefing.plataforma || "").split(",").map((s) => s.trim()).filter(Boolean);
+  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => {
+    el.checked = plataformas.includes(el.value);
+  });
+  document.getElementById("b-prazo").value = briefing.prazo || "";
+  document.getElementById("b-ordem").value = briefing.ordem || 0;
+  document.getElementById("b-descricao").value = briefing.descricao || "";
+  document.getElementById("b-destaques").value = (briefing.destaques || []).join("\n");
+  document.getElementById("b-pdf").value = "";
+
+  const pdfAtualEl = document.getElementById("b-pdf-atual");
+  if (briefing.pdf_url) {
+    pdfAtualEl.style.display = "block";
+    pdfAtualEl.innerHTML = `PDF atual: <a href="${encodeURI(briefing.pdf_url)}" target="_blank" rel="noopener">ver arquivo</a>. Envie um novo aqui só se quiser substituir.`;
+  } else {
+    pdfAtualEl.style.display = "none";
+    pdfAtualEl.innerHTML = "";
+  }
+
+  document.getElementById("b-form-title").textContent = "Editar briefing";
+  document.getElementById("b-add").textContent = "Salvar alterações";
+  document.getElementById("b-cancel-edit").style.display = "inline-block";
+  document.getElementById("b-titulo").closest(".admin-card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function cancelEditBriefing() {
+  editingBriefingId = null;
+  document.getElementById("b-titulo").value = "";
+  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => (el.checked = false));
+  document.getElementById("b-prazo").value = "";
+  document.getElementById("b-ordem").value = 0;
+  document.getElementById("b-descricao").value = "";
+  document.getElementById("b-destaques").value = "";
+  document.getElementById("b-pdf").value = "";
+  document.getElementById("b-pdf-atual").style.display = "none";
+  document.getElementById("b-pdf-atual").innerHTML = "";
+  document.getElementById("b-form-title").textContent = "Novo briefing";
+  document.getElementById("b-add").textContent = "Adicionar briefing";
+  document.getElementById("b-cancel-edit").style.display = "none";
+}
+
+async function saveBriefing() {
   const titulo = document.getElementById("b-titulo").value.trim();
   const plataforma = Array.from(document.querySelectorAll('input[name="b-plataforma"]:checked'))
     .map((el) => el.value)
@@ -168,7 +222,10 @@ async function addBriefing() {
     return;
   }
 
-  let pdf_url = null;
+  const isEditing = Boolean(editingBriefingId);
+  const existing = isEditing ? BRIEFINGS.find((b) => b.id === editingBriefingId) : null;
+  let pdf_url = existing ? existing.pdf_url || null : null;
+
   if (pdfFile) {
     feedbackEl("b-feedback", "Enviando PDF…", "success");
     const path = `${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
@@ -184,22 +241,19 @@ async function addBriefing() {
     pdf_url = publicUrlData.publicUrl;
   }
 
-  const { error } = await client.from("aura_hub_briefings").insert({
-    titulo, plataforma: plataforma || null, prazo, ordem, descricao: descricao || null, destaques, pdf_url,
-  });
+  const payload = { titulo, plataforma: plataforma || null, prazo, ordem, descricao: descricao || null, destaques, pdf_url };
+
+  const { error } = isEditing
+    ? await client.from("aura_hub_briefings").update(payload).eq("id", editingBriefingId)
+    : await client.from("aura_hub_briefings").insert(payload);
 
   if (error) {
     feedbackEl("b-feedback", `Erro: ${error.message}`, "error");
     return;
   }
 
-  feedbackEl("b-feedback", "Briefing adicionado.", "success");
-  document.getElementById("b-titulo").value = "";
-  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => (el.checked = false));
-  document.getElementById("b-prazo").value = "";
-  document.getElementById("b-descricao").value = "";
-  document.getElementById("b-destaques").value = "";
-  pdfInput.value = "";
+  feedbackEl("b-feedback", isEditing ? "Briefing atualizado." : "Briefing adicionado.", "success");
+  cancelEditBriefing();
   loadBriefings();
 }
 
