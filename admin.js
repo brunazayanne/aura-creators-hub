@@ -500,6 +500,9 @@ function renderSubmissoes() {
       const consentTag = s.consent_public_display
         ? "autorizou exibir no mural"
         : "não autorizou exibir no mural";
+      const adcodeTag = s.boost_authorized
+        ? `Autorizou impulsionamento · adcode: <strong>${escapeHtml(s.boost_adcode || "não informado")}</strong>`
+        : "Não autorizou impulsionamento";
 
       return `
         <div class="admin-row admin-row--submissao" data-id="${s.id}">
@@ -509,6 +512,7 @@ function renderSubmissoes() {
               ${escapeHtml(s.content_platform || "")} · ${escapeHtml(consentTag)}
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver conteúdo</a>` : ""}
             </p>
+            <p style="font-size:12px;opacity:.75;">${adcodeTag}</p>
             ${s.thumb_url ? `<img src="${encodeURI(s.thumb_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;margin-top:6px;">` : ""}
           </div>
           <div class="admin-submissao__actions">
