@@ -519,6 +519,14 @@ function renderSubmissoes() {
             <input type="file" accept="image/*" data-role="thumb-input">
             <button type="button" data-action="upload-thumb">Salvar imagem</button>
             <button type="button" data-action="toggle-approve" data-approved="${s.approved}">${s.approved ? "Tirar do mural" : "Aprovar pro mural"}</button>
+            ${
+              s.approved
+                ? `<span style="display:flex;align-items:center;gap:6px;">
+                    <input type="number" data-role="ordem-input" value="${s.mural_ordem ?? ""}" placeholder="ordem" style="width:70px;">
+                    <button type="button" data-action="save-ordem">Salvar ordem</button>
+                  </span>`
+                : ""
+            }
           </div>
         </div>
       `;
@@ -537,12 +545,37 @@ function renderSubmissoes() {
       uploadSubmissionThumb(id, btn);
     })
   );
+  list.querySelectorAll('[data-action="save-ordem"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-id]").dataset.id;
+      saveMuralOrdem(id, btn);
+    })
+  );
 }
 
 async function toggleApproveSubmission(id, approvedAtual) {
   const { error } = await client.from("aura_hub_submissions").update({ approved: !approvedAtual }).eq("id", id);
   if (error) {
     alert(`Erro ao atualizar: ${error.message}`);
+    return;
+  }
+  loadSubmissoes();
+}
+
+async function saveMuralOrdem(id, btn) {
+  const row = btn.closest("[data-id]");
+  const input = row.querySelector('[data-role="ordem-input"]');
+  const raw = input.value.trim();
+  const mural_ordem = raw === "" ? null : Number(raw);
+
+  if (raw !== "" && Number.isNaN(mural_ordem)) {
+    alert("Digite um número válido pra ordem.");
+    return;
+  }
+
+  const { error } = await client.from("aura_hub_submissions").update({ mural_ordem }).eq("id", id);
+  if (error) {
+    alert(`Erro ao salvar ordem: ${error.message}`);
     return;
   }
   loadSubmissoes();
