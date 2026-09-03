@@ -104,6 +104,20 @@
       <div class="admin-card">
         <h2>Submissões recebidas</h2>
         <p class="section__microcopy" style="margin-bottom:16px;">Aprove pra publicar no mural e suba a imagem que representa o conteúdo.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <select id="s-filter-briefing">
+            <option value="">Todos os briefings</option>
+          </select>
+          <select id="s-filter-plataforma">
+            <option value="">Todas as plataformas</option>
+            <option value="instagram">Instagram (Reels)</option>
+            <option value="instagram_story">Instagram (Story)</option>
+            <option value="tiktok">TikTok</option>
+            <option value="youtube_shorts">YouTube (Shorts)</option>
+            <option value="youtube_longo">YouTube (Conteúdo longo)</option>
+          </select>
+          <button type="button" class="btn btn--small btn--outline-light" id="s-filter-clear">Limpar filtros</button>
+        </div>
         <div class="admin-list" id="s-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>

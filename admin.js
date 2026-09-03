@@ -18,6 +18,7 @@ let CATEGORIAS = [];
 let PRODUTOS = [];
 let BRIEFINGS = [];
 let editingBriefingId = null;
+let ALL_SUBMISSOES = [];
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -42,7 +43,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("b-add").addEventListener("click", saveBriefing);
   document.getElementById("b-cancel-edit").addEventListener("click", cancelEditBriefing);
   document.getElementById("c-add").addEventListener("click", addCategoria);
+
+  document.getElementById("s-filter-briefing").addEventListener("change", renderSubmissoes);
+  document.getElementById("s-filter-plataforma").addEventListener("change", renderSubmissoes);
+  document.getElementById("s-filter-clear").addEventListener("click", () => {
+    document.getElementById("s-filter-briefing").value = "";
+    document.getElementById("s-filter-plataforma").value = "";
+    renderSubmissoes();
+  });
 });
+
+function populateSubmissaoBriefingFilter() {
+  const select = document.getElementById("s-filter-briefing");
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">Todos os briefings</option>';
+  BRIEFINGS.forEach((b) => {
+    const el = document.createElement("option");
+    el.value = b.id;
+    el.textContent = b.titulo;
+    select.appendChild(el);
+  });
+  select.value = current;
+}
 
 function switchTab(name) {
   document.querySelectorAll(".admin-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
@@ -121,6 +144,7 @@ async function loadBriefings() {
     return;
   }
   BRIEFINGS = data || [];
+  populateSubmissaoBriefingFilter();
 
   if (!data || data.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum briefing cadastrado ainda.</p>';
@@ -441,8 +465,29 @@ async function loadSubmissoes() {
     list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
     return;
   }
-  if (!data || data.length === 0) {
+
+  ALL_SUBMISSOES = data || [];
+  populateSubmissaoBriefingFilter();
+  renderSubmissoes();
+}
+
+function renderSubmissoes() {
+  const list = document.getElementById("s-list");
+  const filtroBriefing = document.getElementById("s-filter-briefing")?.value || "";
+  const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
+
+  const data = ALL_SUBMISSOES.filter((s) => {
+    if (filtroBriefing && s.briefing_id !== filtroBriefing) return false;
+    if (filtroPlataforma && s.content_platform !== filtroPlataforma) return false;
+    return true;
+  });
+
+  if (ALL_SUBMISSOES.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
+    return;
+  }
+  if (data.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhuma submissão encontrada com esse filtro.</p>';
     return;
   }
 
