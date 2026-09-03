@@ -25,7 +25,6 @@ const BRIEFINGS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_briefings?select=*&
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const PRODUTOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_produtos?select=*&ativo=eq.true&order=ordem.asc`;
 const CAMPANHAS_CONFIG_URL = "briefings.json";
-const SUBMISSION_STORAGE_KEY = "aura_hub_last_submission"; // { briefing_id, submitted_at } — solução simples de P0 pra fechar o loop sem exigir login
 
 let BRIEFINGS = [];
 let CATEGORIAS = [];
@@ -51,7 +50,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupModal();
   setupForm();
   loadMural();
-  applyAlreadySubmittedState(BRIEFINGS);
 });
 
 /* ---------- FETCH GENÉRICO (Supabase REST, somente leitura) ---------- */
@@ -293,46 +291,28 @@ function populateProdutoSelect(categoriaId) {
   });
 }
 
-/* ---------- ESTADO "JÁ ENVIEI PRO BRIEFING ATUAL" ---------- */
+/* ---------- CONTAGEM DE CONTEÚDO POR CREATOR ----------
+   Sem limite de envios por briefing — a creator pode mandar
+   quantos conteúdos quiser. Depois de cada envio, contamos
+   quantos ela já mandou (pelo cupom) só pra dar um feedback
+   de reconhecimento na hora. */
 
-function getLastSubmission() {
+async function countSubmissionsByCupom(cupom) {
+  if (!cupom) return null;
   try {
-    return JSON.parse(localStorage.getItem(SUBMISSION_STORAGE_KEY) || "null");
+    const endpoint = `${SUPABASE_URL}/rest/v1/aura_hub_submissions?coupon_code=eq.${encodeURIComponent(cupom)}&select=id`;
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: "count=exact",
+      },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data) ? data.length : null;
   } catch {
     return null;
-  }
-}
-
-function setLastSubmission(briefingId) {
-  if (!briefingId) return;
-  try {
-    localStorage.setItem(SUBMISSION_STORAGE_KEY, JSON.stringify({ briefing_id: briefingId, submitted_at: new Date().toISOString() }));
-  } catch {
-    /* localStorage indisponível — segue sem persistir o estado */
-  }
-}
-
-function applyAlreadySubmittedState(list) {
-  const vigentes = briefingsVigentes(list);
-  if (vigentes.length === 0) return;
-
-  const last = getLastSubmission();
-  if (!last) return;
-
-  const match = vigentes.find((b) => b.id === last.briefing_id);
-  if (match) showAlreadySubmitted(match);
-}
-
-function showAlreadySubmitted(briefing) {
-  const intro = document.getElementById("formulario-intro");
-  const wrap = document.getElementById("formulario-wrap");
-  if (intro) intro.textContent = "Já recebemos seu conteúdo pra esse briefing.";
-  if (wrap) {
-    wrap.innerHTML = `
-      <div class="form-card form-card--done">
-        <p>Seu envio para <strong>${escapeHtml(briefing.titulo)}</strong> está com a gente — assim que aparecer no mural, ele passa a valer como prova. Se precisar de algum ajuste, nosso time chama você no WhatsApp informado.</p>
-      </div>
-    `;
   }
 }
 
@@ -401,16 +381,15 @@ function setupForm() {
 
     try {
       await submitToBackend(data);
-      if (data.seguiu_briefing === "sim") setLastSubmission(data.briefing_ref);
       form.reset();
       ["bloco-briefing", "bloco-categoria", "bloco-produto", "bloco-plataforma", "bloco-link", "bloco-consentimento", "bloco-boost"].forEach((id) => revealField(id, false));
       adcodeField.hidden = true;
-      feedback.textContent = "Recebemos seu conteúdo. Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado.";
+
+      const total = await countSubmissionsByCupom(data.codigo);
+      feedback.textContent = total
+        ? `Recebemos seu conteúdo — esse já é o seu ${total}º envio! Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado. Pode mandar mais quando quiser.`
+        : "Recebemos seu conteúdo. Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado. Pode mandar mais quando quiser.";
       feedback.dataset.state = "success";
-      if (data.seguiu_briefing === "sim") {
-        const match = BRIEFINGS.find((b) => b.id === data.briefing_ref);
-        if (match) showAlreadySubmitted(match);
-      }
     } catch (err) {
       feedback.textContent = "Algo não saiu como esperado. Tenta enviar de novo em alguns instantes.";
       feedback.dataset.state = "error";
