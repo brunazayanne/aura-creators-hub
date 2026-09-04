@@ -150,13 +150,24 @@
       </div>
       <div class="admin-card">
         <h2>Cruzamento com vendas</h2>
-        <p class="section__microcopy">Ainda não conectado. Ver observação abaixo antes de priorizar.</p>
+        <p class="section__microcopy" style="margin-bottom:16px;">Suba o CSV de vendas (colunas: coupons, date_sale, order_value) pra cruzar com as postagens por cupom e ver a relação dia a dia, com hoje em destaque.</p>
+        <div class="admin-form-row--inline" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="v-csv-input" accept=".csv,text/csv">
+          <button type="button" class="btn btn--small btn--primary" id="v-csv-process">Processar CSV</button>
+        </div>
+        <p class="admin-feedback" id="v-csv-feedback"></p>
+        <div class="admin-kpis" id="v-kpis" style="display:none;margin-top:16px;"></div>
+        <div style="margin-top:20px;max-width:100%;">
+          <canvas id="v-chart" height="280" style="display:none;"></canvas>
+        </div>
+        <div class="admin-list" id="v-sem-match" style="margin-top:16px;"></div>
       </div>
     </section>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

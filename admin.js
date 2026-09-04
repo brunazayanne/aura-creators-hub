@@ -60,6 +60,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
+
+  wireVendasUpload();
 });
 
 function populateSubmissaoBriefingFilter() {
@@ -819,4 +821,238 @@ function renderRelatorioRanking(el, submissions) {
     `
     )
     .join("");
+}
+
+/* ---------- CRUZAMENTO COM VENDAS (upload de CSV, sem persistência) ---------- */
+
+let vendasChart = null;
+
+function parseCsv(text) {
+  const firstLine = (text.split(/\r?\n/)[0] || "");
+  const delimiter = firstLine.includes(";") ? ";" : ",";
+
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"') {
+      inQuotes = true;
+    } else if (char === delimiter) {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && text[i + 1] === "\n") continue;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+  if (field !== "" || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  const header = (rows.shift() || []).map((h) => h.trim().toLowerCase());
+  return rows
+    .filter((r) => r.length > 1 || (r[0] || "").trim() !== "")
+    .map((r) => {
+      const obj = {};
+      header.forEach((h, idx) => { obj[h] = (r[idx] || "").trim(); });
+      return obj;
+    });
+}
+
+function parseVendaData(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function parseVendaValor(value) {
+  if (!value) return 0;
+  const n = parseFloat(String(value).replace(/\./g, "").replace(",", "."));
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function wireVendasUpload() {
+  const btn = document.getElementById("v-csv-process");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const input = document.getElementById("v-csv-input");
+    const file = input.files && input.files[0];
+    if (!file) {
+      feedbackEl("v-csv-feedback", "Escolha um arquivo CSV primeiro.", "error");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        processVendasCsv(String(e.target.result));
+      } catch (err) {
+        feedbackEl("v-csv-feedback", `Erro ao processar CSV: ${err.message}`, "error");
+      }
+    };
+    reader.onerror = () => feedbackEl("v-csv-feedback", "Não consegui ler o arquivo.", "error");
+    reader.readAsText(file, "utf-8");
+  });
+}
+
+function processVendasCsv(text) {
+  const rows = parseCsv(text);
+  if (rows.length === 0) {
+    feedbackEl("v-csv-feedback", "CSV vazio ou em formato não reconhecido.", "error");
+    return;
+  }
+
+  const colunas = Object.keys(rows[0]);
+  const couponCol = colunas.find((k) => k.includes("coupon")) || "coupons";
+  const dateCol = colunas.find((k) => k.includes("date_sale")) || "date_sale";
+  const valueCol = colunas.find((k) => k.includes("order_value")) || "order_value";
+
+  const cuponsCreators = new Set(
+    ALL_SUBMISSOES.map((s) => (s.coupon_code || "").trim().toUpperCase()).filter(Boolean)
+  );
+
+  if (cuponsCreators.size === 0) {
+    feedbackEl("v-csv-feedback", "Nenhuma submissão com cupom cadastrado ainda pra cruzar.", "error");
+    return;
+  }
+
+  const vendasPorDia = {};
+  const cuponsSemMatch = new Set();
+  let vendasCruzadas = 0;
+  let valorCruzado = 0;
+
+  rows.forEach((r) => {
+    const cupom = (r[couponCol] || "").trim().toUpperCase();
+    if (!cupom) return;
+    const data = parseVendaData(r[dateCol]);
+    if (!data) return;
+    const valor = parseVendaValor(r[valueCol]);
+
+    if (!cuponsCreators.has(cupom)) {
+      cuponsSemMatch.add(cupom);
+      return;
+    }
+
+    const key = dateKey(data);
+    if (!vendasPorDia[key]) vendasPorDia[key] = { total: 0, count: 0 };
+    vendasPorDia[key].total += valor;
+    vendasPorDia[key].count += 1;
+    vendasCruzadas += 1;
+    valorCruzado += valor;
+  });
+
+  const postagensPorDia = {};
+  ALL_SUBMISSOES.forEach((s) => {
+    if (!s.created_at) return;
+    const d = new Date(s.created_at);
+    if (Number.isNaN(d.getTime())) return;
+    const key = dateKey(d);
+    postagensPorDia[key] = (postagensPorDia[key] || 0) + 1;
+  });
+
+  const todasAsChaves = new Set([...Object.keys(vendasPorDia), ...Object.keys(postagensPorDia)]);
+  const dias = Array.from(todasAsChaves).sort();
+
+  if (dias.length === 0) {
+    feedbackEl("v-csv-feedback", "Não encontrei vendas de cupons de creators nesse CSV.", "error");
+    return;
+  }
+
+  const hojeKey = dateKey(new Date());
+
+  renderVendasKpis(vendasCruzadas, valorCruzado, cuponsSemMatch.size);
+  renderVendasChart(dias, postagensPorDia, vendasPorDia, hojeKey);
+  renderCuponsSemMatch(cuponsSemMatch);
+
+  feedbackEl("v-csv-feedback", `CSV processado: ${rows.length} vendas lidas, ${vendasCruzadas} cruzadas com cupons de creators.`, "success");
+}
+
+function renderVendasKpis(vendasCruzadas, valorCruzado, semMatchCount) {
+  const el = document.getElementById("v-kpis");
+  el.style.display = "grid";
+  const valorFormatado = valorCruzado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${vendasCruzadas}</span><span class="admin-kpi__label">Vendas cruzadas c/ cupom de creator</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${valorFormatado}</span><span class="admin-kpi__label">Valor cruzado</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${semMatchCount}</span><span class="admin-kpi__label">Cupons no CSV sem creator identificado</span></div>
+  `;
+}
+
+function renderVendasChart(dias, postagensPorDia, vendasPorDia, hojeKey) {
+  const canvas = document.getElementById("v-chart");
+  canvas.style.display = "block";
+
+  const labels = dias.map((k) => {
+    const [, m, d] = k.split("-");
+    return `${d}/${m}${k === hojeKey ? " (hoje)" : ""}`;
+  });
+  const postagensData = dias.map((k) => postagensPorDia[k] || 0);
+  const vendasData = dias.map((k) => (vendasPorDia[k] ? vendasPorDia[k].count : 0));
+
+  if (vendasChart) vendasChart.destroy();
+
+  vendasChart = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Postagens",
+          data: postagensData,
+          backgroundColor: dias.map((k) => (k === hojeKey ? "#ac8a53" : "rgba(172,138,83,0.45)")),
+          yAxisID: "y",
+        },
+        {
+          label: "Vendas (cupons de creators)",
+          data: vendasData,
+          type: "line",
+          borderColor: "#655742",
+          backgroundColor: "#655742",
+          yAxisID: "y1",
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: "Postagens" } },
+        y1: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false }, title: { display: true, text: "Vendas" } },
+      },
+    },
+  });
+}
+
+function renderCuponsSemMatch(cuponsSemMatch) {
+  const el = document.getElementById("v-sem-match");
+  if (!el) return;
+  if (cuponsSemMatch.size === 0) {
+    el.innerHTML = "";
+    return;
+  }
+  const lista = Array.from(cuponsSemMatch).sort().join(", ");
+  el.innerHTML = `<p class="section__microcopy">Cupons no CSV sem submissão correspondente (não cruzados): ${escapeHtml(lista)}</p>`;
 }
