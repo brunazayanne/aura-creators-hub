@@ -68,7 +68,7 @@ function populateSubmissaoBriefingFilter() {
   const select = document.getElementById("s-filter-briefing");
   if (!select) return;
   const current = select.value;
-  select.innerHTML = '<option value="">Todos os briefings</option>';
+  select.innerHTML = '<option value="">Todos os briefings</option><option value="__sem_briefing__">Sem briefing</option>';
   BRIEFINGS.forEach((b) => {
     const el = document.createElement("option");
     el.value = b.id;
@@ -526,7 +526,8 @@ function renderSubmissoes() {
   const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
 
   const data = ALL_SUBMISSOES.filter((s) => {
-    if (filtroBriefing && s.briefing_id !== filtroBriefing) return false;
+    if (filtroBriefing === "__sem_briefing__" && s.briefing_id) return false;
+    if (filtroBriefing && filtroBriefing !== "__sem_briefing__" && s.briefing_id !== filtroBriefing) return false;
     if (filtroPlataforma && s.content_platform !== filtroPlataforma) return false;
     return true;
   });
