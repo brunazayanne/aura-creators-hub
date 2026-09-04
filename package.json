@@ -1,0 +1,15 @@
+{
+  "name": "aura-creators-hub",
+  "version": "1.0.0",
+  "description": "AURA Creators Content Hub - captação de conteúdo",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build required'"
+  },
+  "keywords": ["aura", "creators", "content-hub"],
+  "author": "AURA Beauty",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  }
+}
