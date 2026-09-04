@@ -730,6 +730,7 @@ summary:focus-visible {
 }
 .admin-tag--ok { background: var(--sucesso); color: var(--white); }
 .admin-tag--pending { background: var(--tan); color: var(--brown); }
+.admin-tag--briefing { background: rgba(172,138,83,0.12); color: var(--gold); border: 1px solid var(--gold); }
 
 /* relatório */
 .admin-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }

@@ -200,6 +200,7 @@ async function loadBriefings() {
   }
   BRIEFINGS = data || [];
   populateSubmissaoBriefingFilter();
+  if (ALL_SUBMISSOES.length) renderSubmissoes();
 
   if (!data || data.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum briefing cadastrado ainda.</p>';
@@ -559,11 +560,15 @@ function renderSubmissoes() {
         ? `Autorizou impulsionamento · adcode: <strong>${escapeHtml(s.boost_adcode || "não informado")}</strong>`
         : "Não autorizou impulsionamento";
       const postedAt = formatDateTime(s.created_at);
+      const briefingTitulo = s.briefing_id
+        ? (BRIEFINGS.find((b) => b.id === s.briefing_id)?.titulo || "Briefing removido")
+        : "Sem briefing";
+      const briefingTag = `<span class="admin-tag admin-tag--briefing">${escapeHtml(briefingTitulo)}</span>`;
 
       return `
         <div class="admin-row admin-row--submissao" data-id="${s.id}">
           <div class="admin-submissao__info">
-            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong> ${handle ? `— @${escapeHtml(handle)}` : ""} ${statusTag}</p>
+            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong> ${handle ? `— @${escapeHtml(handle)}` : ""} ${statusTag} ${briefingTag}</p>
             <p style="font-size:12px;opacity:.75;">
               ${escapeHtml(s.content_platform || "")} · ${escapeHtml(consentTag)}
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver conteúdo</a>` : ""}
