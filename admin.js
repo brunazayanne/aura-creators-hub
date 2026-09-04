@@ -117,12 +117,12 @@ function showLogin() {
   document.getElementById("admin-app").hidden = true;
 }
 
-function showApp() {
+async function showApp() {
   document.getElementById("login-box").hidden = true;
   document.getElementById("admin-app").hidden = false;
   loadBriefings();
   loadCategorias();
-  loadSubmissoes();
+  await loadSubmissoes();
   loadRelatorio();
 }
 
@@ -707,16 +707,10 @@ async function loadRelatorio() {
   const briefingEl = document.getElementById("r-briefing");
   const rankingEl = document.getElementById("r-ranking");
 
-  const { data, error } = await client.from("aura_hub_submissions").select("*");
-
-  if (error) {
-    [kpisEl, plataformaEl, briefingEl, rankingEl].forEach((el) => {
-      el.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
-    });
-    return;
-  }
-
-  const submissions = data || [];
+  // Reaproveita as submissões já carregadas por loadSubmissoes() em vez de
+  // repetir um select * na mesma tabela — reduz carga no banco a cada
+  // abertura do painel (projeto está no plano free do Supabase).
+  const submissions = ALL_SUBMISSOES || [];
 
   if (submissions.length === 0) {
     [kpisEl, plataformaEl, briefingEl, rankingEl].forEach((el) => {
