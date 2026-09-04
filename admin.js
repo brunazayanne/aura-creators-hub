@@ -19,6 +19,8 @@ let PRODUTOS = [];
 let BRIEFINGS = [];
 let editingBriefingId = null;
 let ALL_SUBMISSOES = [];
+let SUBMISSOES_PAGE = 1;
+const SUBMISSOES_POR_PAGINA = 10;
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -44,11 +46,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("b-cancel-edit").addEventListener("click", cancelEditBriefing);
   document.getElementById("c-add").addEventListener("click", addCategoria);
 
-  document.getElementById("s-filter-briefing").addEventListener("change", renderSubmissoes);
-  document.getElementById("s-filter-plataforma").addEventListener("change", renderSubmissoes);
+  document.getElementById("s-filter-briefing").addEventListener("change", () => {
+    SUBMISSOES_PAGE = 1;
+    renderSubmissoes();
+  });
+  document.getElementById("s-filter-plataforma").addEventListener("change", () => {
+    SUBMISSOES_PAGE = 1;
+    renderSubmissoes();
+  });
   document.getElementById("s-filter-clear").addEventListener("click", () => {
     document.getElementById("s-filter-briefing").value = "";
     document.getElementById("s-filter-plataforma").value = "";
+    SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
 });
@@ -130,10 +139,54 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function isPast(prazo) {
+  if (!prazo) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return new Date(`${prazo}T00:00:00`) < hoje;
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const data = d.toLocaleDateString("pt-BR");
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${data} às ${hora}`;
+}
+
 /* ---------- BRIEFINGS ---------- */
+
+function briefingRowHtml(b) {
+  return `
+      <div class="admin-row${b.ativo ? "" : " admin-row--inativo"}">
+        <span>${escapeHtml(b.titulo)}${b.prazo ? ` — até ${escapeHtml(b.prazo)}` : ""}</span>
+        <div class="admin-row__actions">
+          <button data-action="edit" data-id="${b.id}">Editar</button>
+          <button data-action="toggle" data-id="${b.id}" data-ativo="${b.ativo}">${b.ativo ? "Desativar" : "Ativar"}</button>
+          <button class="danger" data-action="delete" data-id="${b.id}">Excluir</button>
+        </div>
+      </div>
+    `;
+}
+
+function wireBriefingRowActions(container) {
+  container.querySelectorAll('[data-action="edit"]').forEach((btn) =>
+    btn.addEventListener("click", () => startEditBriefing(btn.dataset.id))
+  );
+  container.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
+    btn.addEventListener("click", () => toggleBriefing(btn.dataset.id, btn.dataset.ativo === "true"))
+  );
+  container.querySelectorAll('[data-action="delete"]').forEach((btn) =>
+    btn.addEventListener("click", () => deleteBriefing(btn.dataset.id))
+  );
+}
 
 async function loadBriefings() {
   const list = document.getElementById("b-list");
+  const listArquivo = document.getElementById("b-list-arquivo");
+  const arquivoCount = document.getElementById("b-arquivo-count");
+
   const { data, error } = await client
     .from("aura_hub_briefings")
     .select("*")
@@ -148,33 +201,26 @@ async function loadBriefings() {
 
   if (!data || data.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum briefing cadastrado ainda.</p>';
+    if (listArquivo) listArquivo.innerHTML = '<p class="admin-empty">Nenhum briefing anterior.</p>';
+    if (arquivoCount) arquivoCount.textContent = "(0)";
     return;
   }
 
-  list.innerHTML = data
-    .map(
-      (b) => `
-      <div class="admin-row${b.ativo ? "" : " admin-row--inativo"}">
-        <span>${escapeHtml(b.titulo)}${b.prazo ? ` — até ${escapeHtml(b.prazo)}` : ""}</span>
-        <div class="admin-row__actions">
-          <button data-action="edit" data-id="${b.id}">Editar</button>
-          <button data-action="toggle" data-id="${b.id}" data-ativo="${b.ativo}">${b.ativo ? "Desativar" : "Ativar"}</button>
-          <button class="danger" data-action="delete" data-id="${b.id}">Excluir</button>
-        </div>
-      </div>
-    `
-    )
-    .join("");
+  const vigentes = data.filter((b) => !isPast(b.prazo));
+  const encerrados = data.filter((b) => isPast(b.prazo));
 
-  list.querySelectorAll('[data-action="edit"]').forEach((btn) =>
-    btn.addEventListener("click", () => startEditBriefing(btn.dataset.id))
-  );
-  list.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
-    btn.addEventListener("click", () => toggleBriefing(btn.dataset.id, btn.dataset.ativo === "true"))
-  );
-  list.querySelectorAll('[data-action="delete"]').forEach((btn) =>
-    btn.addEventListener("click", () => deleteBriefing(btn.dataset.id))
-  );
+  list.innerHTML = vigentes.length
+    ? vigentes.map(briefingRowHtml).join("")
+    : '<p class="admin-empty">Nenhum briefing vigente no momento.</p>';
+  wireBriefingRowActions(list);
+
+  if (listArquivo) {
+    listArquivo.innerHTML = encerrados.length
+      ? encerrados.map(briefingRowHtml).join("")
+      : '<p class="admin-empty">Nenhum briefing anterior.</p>';
+    wireBriefingRowActions(listArquivo);
+  }
+  if (arquivoCount) arquivoCount.textContent = `(${encerrados.length})`;
 }
 
 function startEditBriefing(id) {
@@ -491,7 +537,14 @@ function renderSubmissoes() {
     return;
   }
 
-  list.innerHTML = data
+  const totalPaginas = Math.max(1, Math.ceil(data.length / SUBMISSOES_POR_PAGINA));
+  if (SUBMISSOES_PAGE > totalPaginas) SUBMISSOES_PAGE = totalPaginas;
+  if (SUBMISSOES_PAGE < 1) SUBMISSOES_PAGE = 1;
+
+  const inicio = (SUBMISSOES_PAGE - 1) * SUBMISSOES_POR_PAGINA;
+  const pageData = data.slice(inicio, inicio + SUBMISSOES_POR_PAGINA);
+
+  const rowsHtml = pageData
     .map((s) => {
       const handle = (s.instagram_handle || "").replace(/^@+/, "");
       const statusTag = s.approved
@@ -503,6 +556,7 @@ function renderSubmissoes() {
       const adcodeTag = s.boost_authorized
         ? `Autorizou impulsionamento · adcode: <strong>${escapeHtml(s.boost_adcode || "não informado")}</strong>`
         : "Não autorizou impulsionamento";
+      const postedAt = formatDateTime(s.created_at);
 
       return `
         <div class="admin-row admin-row--submissao" data-id="${s.id}">
@@ -512,6 +566,7 @@ function renderSubmissoes() {
               ${escapeHtml(s.content_platform || "")} · ${escapeHtml(consentTag)}
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver conteúdo</a>` : ""}
             </p>
+            ${postedAt ? `<p style="font-size:12px;opacity:.75;">Postado em ${escapeHtml(postedAt)}</p>` : ""}
             <p style="font-size:12px;opacity:.75;">${adcodeTag}</p>
             ${s.thumb_url ? `<img src="${encodeURI(s.thumb_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;margin-top:6px;">` : ""}
           </div>
@@ -533,6 +588,16 @@ function renderSubmissoes() {
     })
     .join("");
 
+  const pagerHtml = `
+    <div class="admin-pager" style="display:flex;align-items:center;gap:12px;justify-content:center;margin-top:16px;">
+      <button type="button" class="btn btn--small btn--outline-light" id="s-pager-prev" ${SUBMISSOES_PAGE <= 1 ? "disabled" : ""}>Anterior</button>
+      <span style="font-size:13px;opacity:.75;">Página ${SUBMISSOES_PAGE} de ${totalPaginas}</span>
+      <button type="button" class="btn btn--small btn--outline-light" id="s-pager-next" ${SUBMISSOES_PAGE >= totalPaginas ? "disabled" : ""}>Próxima</button>
+    </div>
+  `;
+
+  list.innerHTML = rowsHtml + (totalPaginas > 1 ? pagerHtml : "");
+
   list.querySelectorAll('[data-action="toggle-approve"]').forEach((btn) =>
     btn.addEventListener("click", () => {
       const id = btn.closest("[data-id]").dataset.id;
@@ -551,6 +616,21 @@ function renderSubmissoes() {
       saveMuralOrdem(id, btn);
     })
   );
+
+  const prevBtn = document.getElementById("s-pager-prev");
+  const nextBtn = document.getElementById("s-pager-next");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      SUBMISSOES_PAGE -= 1;
+      renderSubmissoes();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      SUBMISSOES_PAGE += 1;
+      renderSubmissoes();
+    });
+  }
 }
 
 async function toggleApproveSubmission(id, approvedAtual) {
