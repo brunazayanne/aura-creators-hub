@@ -589,10 +589,10 @@ function renderSubmissoes() {
     .join("");
 
   const pagerHtml = `
-    <div class="admin-pager" style="display:flex;align-items:center;gap:12px;justify-content:center;margin-top:16px;">
-      <button type="button" class="btn btn--small btn--outline-light" id="s-pager-prev" ${SUBMISSOES_PAGE <= 1 ? "disabled" : ""}>Anterior</button>
+    <div class="admin-pager" style="display:flex;align-items:center;gap:14px;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--placeholder-gray);">
+      <button type="button" class="btn btn--small btn--outline" id="s-pager-prev" ${SUBMISSOES_PAGE <= 1 ? "disabled" : ""}>&larr; Página anterior</button>
       <span style="font-size:13px;opacity:.75;">Página ${SUBMISSOES_PAGE} de ${totalPaginas}</span>
-      <button type="button" class="btn btn--small btn--outline-light" id="s-pager-next" ${SUBMISSOES_PAGE >= totalPaginas ? "disabled" : ""}>Próxima</button>
+      <button type="button" class="btn btn--small btn--outline" id="s-pager-next" ${SUBMISSOES_PAGE >= totalPaginas ? "disabled" : ""}>Próxima página &rarr;</button>
     </div>
   `;
 
