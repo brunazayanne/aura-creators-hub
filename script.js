@@ -1,18 +1,18 @@
 /* ============================================
    AURA Creators Content Hub
-   Lógica: carrega briefings/produtos/categorias do
-   Supabase (geridos pela página /admin), renderiza
-   os cards de "briefings da semana" + modal, o mural
-   (vitrine), o arquivo de briefings anteriores e as
-   campanhas (briefings.json), valida e envia o
-   formulário progressivo, e fecha o loop mostrando
-   quando a creator já enviou conteúdo pro briefing
-   atual (localStorage, sem login).
+   Lógica: carrega produtos/categorias do Supabase
+   (geridos pela página /admin), renderiza o mural
+   (vitrine) e as campanhas (briefings.json), valida
+   e envia o formulário de conteúdo.
+
+   Seção de briefings removida do hub e do formulário
+   por enquanto (14/09/2026) — o back-end/admin de
+   briefings continua ativo, só não é exibido pra creator.
 
    Backend: Supabase (projeto AURA Creators Club).
    - aura_hub_submissions: recebe os envios do form.
    - aura_hub_mural: view pública (approved + consent).
-   - aura_hub_briefings / aura_hub_produtos / aura_hub_categorias:
+   - aura_hub_produtos / aura_hub_categorias:
      conteúdo gerido pela creator via /admin.html (login
      Supabase Auth) — sem precisar editar JSON.
    ============================================ */
@@ -21,33 +21,25 @@ const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted,content_url&order=mural_ordem.asc.nullslast,created_at.desc`;
-const BRIEFINGS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_briefings?select=*&ativo=eq.true&order=ordem.asc`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const PRODUTOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_produtos?select=*&ativo=eq.true&order=ordem.asc`;
 const CAMPANHAS_CONFIG_URL = "briefings.json";
 
-let BRIEFINGS = [];
 let CATEGORIAS = [];
 let PRODUTOS = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const [briefings, categorias, produtos, campanhasConfig] = await Promise.all([
-    fetchSupabaseList(BRIEFINGS_ENDPOINT),
+  const [categorias, produtos, campanhasConfig] = await Promise.all([
     fetchSupabaseList(CATEGORIAS_ENDPOINT),
     fetchSupabaseList(PRODUTOS_ENDPOINT),
     loadCampanhasConfig(),
   ]);
 
-  BRIEFINGS = briefings;
   CATEGORIAS = categorias;
   PRODUTOS = produtos;
 
-  renderBriefingsSemana(BRIEFINGS);
-  renderBriefingsArquivo(BRIEFINGS);
   renderCampanhas(campanhasConfig);
-  populateBriefingSelect(BRIEFINGS);
   populateCategoriaSelect(CATEGORIAS);
-  setupModal();
   setupForm();
   loadMural();
 });
@@ -81,98 +73,6 @@ async function loadCampanhasConfig() {
   }
 }
 
-function formatDate(value) {
-  if (!value) return "";
-  const [y, m, d] = value.split("-");
-  return `${d}/${m}/${y}`;
-}
-
-function isPast(prazo) {
-  if (!prazo) return false;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  return new Date(`${prazo}T00:00:00`) < hoje;
-}
-
-/* ---------- BRIEFINGS DA SEMANA (cards + modal) ----------
-   Um briefing é "vigente" se estiver ativo e o prazo não tiver
-   passado (ou não tiver prazo definido). Os que já passaram do
-   prazo aparecem automaticamente em "briefings anteriores" —
-   quem gerencia pela página /admin não precisa mover nada
-   manualmente entre listas. */
-
-function briefingsVigentes(list) {
-  return list.filter((b) => !isPast(b.prazo));
-}
-
-function briefingsEncerrados(list) {
-  return list.filter((b) => isPast(b.prazo));
-}
-
-function renderBriefingsSemana(list) {
-  const container = document.getElementById("briefings-semana");
-  const vigentes = briefingsVigentes(list);
-
-  if (vigentes.length === 0) {
-    container.innerHTML = '<p class="briefing__empty">Nenhum briefing em destaque no momento — volte em breve pra conferir a novidade da semana.</p>';
-    return;
-  }
-
-  container.innerHTML = vigentes
-    .map(
-      (b) => `
-      <button type="button" class="briefing-card" data-briefing-id="${escapeHtml(b.id)}">
-        ${b.plataforma ? `<span class="briefing-card__plataforma">${escapeHtml(b.plataforma)}</span>` : ""}
-        <p class="briefing-card__titulo">${escapeHtml(b.titulo)}</p>
-        ${b.prazo ? `<p class="briefing-card__prazo">Envie até ${formatDate(b.prazo)}</p>` : ""}
-        <span class="briefing-card__cta">Ver detalhes</span>
-      </button>
-    `
-    )
-    .join("");
-
-  container.querySelectorAll(".briefing-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const briefing = BRIEFINGS.find((b) => b.id === card.dataset.briefingId);
-      if (briefing) openBriefingModal(briefing);
-    });
-  });
-}
-
-function renderBriefingsArquivo(list) {
-  const container = document.getElementById("briefings-arquivo");
-  const encerrados = briefingsEncerrados(list);
-
-  if (encerrados.length === 0) {
-    container.innerHTML = '<p class="arquivo__empty">Ainda não há briefings anteriores por aqui.</p>';
-    return;
-  }
-
-  container.innerHTML = encerrados
-    .map(
-      (b) => `
-        <div class="arquivo__item">
-          <div class="arquivo__info">
-            <p>${escapeHtml(b.titulo)}</p>
-            <p>Encerrou em ${formatDate(b.prazo)}</p>
-          </div>
-          <div class="arquivo__actions">
-            <span class="badge-status badge-status--encerrado">Envio ainda ativo</span>
-            <button type="button" class="arquivo__link" data-briefing-id="${escapeHtml(b.id)}">Ver detalhes</button>
-          </div>
-        </div>
-      `
-    )
-    .join("");
-
-  container.querySelectorAll(".arquivo__link").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const briefing = BRIEFINGS.find((b) => b.id === btn.dataset.briefingId);
-      if (briefing) openBriefingModal(briefing);
-    });
-  });
-}
-
 function renderCampanhas(config) {
   const section = document.getElementById("campanhas-section");
   const container = document.getElementById("campanhas-ativas");
@@ -197,72 +97,7 @@ function renderCampanhas(config) {
     .join("");
 }
 
-/* ---------- MODAL DE BRIEFING ---------- */
-
-function setupModal() {
-  const overlay = document.getElementById("briefing-modal");
-  const closeBtn = document.getElementById("modal-close");
-
-  closeBtn.addEventListener("click", closeBriefingModal);
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) closeBriefingModal();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !overlay.hidden) closeBriefingModal();
-  });
-}
-
-function openBriefingModal(briefing) {
-  const overlay = document.getElementById("briefing-modal");
-  const body = document.getElementById("modal-body");
-
-  const destaques = (briefing.destaques || [])
-    .map((d) => `<li>${escapeHtml(d)}</li>`)
-    .join("");
-
-  body.innerHTML = `
-    ${briefing.plataforma ? `<p class="briefing__product">${escapeHtml(briefing.plataforma)}</p>` : ""}
-    <h2 id="modal-title" class="briefing__title briefing__title--dark">${escapeHtml(briefing.titulo)}</h2>
-    ${briefing.prazo ? `<p class="briefing__deadline">Envie até ${formatDate(briefing.prazo)}</p>` : ""}
-    ${briefing.descricao ? `<p class="modal__descricao">${escapeHtml(briefing.descricao)}</p>` : ""}
-    ${destaques ? `<ul class="highlight-list highlight-list--dark">${destaques}</ul>` : ""}
-    ${briefing.pdf_url ? `<a class="btn btn--outline btn--full" href="${encodeURI(briefing.pdf_url)}" target="_blank" rel="noopener" style="margin-bottom:12px;">Baixar briefing completo (PDF)</a>` : ""}
-    <a class="btn btn--dark btn--full" href="#formulario" id="modal-cta">Enviar conteúdo pra esse briefing</a>
-  `;
-
-  document.getElementById("modal-cta").addEventListener("click", () => {
-    closeBriefingModal();
-    const briefingSelect = document.getElementById("briefing_ref");
-    const seguiuSim = document.getElementById("seguiu-sim");
-    if (seguiuSim) {
-      seguiuSim.checked = true;
-      seguiuSim.dispatchEvent(new Event("change"));
-    }
-    if (briefingSelect) briefingSelect.value = briefing.id;
-  });
-
-  overlay.hidden = false;
-  document.body.style.overflow = "hidden";
-}
-
-function closeBriefingModal() {
-  const overlay = document.getElementById("briefing-modal");
-  overlay.hidden = true;
-  document.body.style.overflow = "";
-}
-
 /* ---------- SELECTS DO FORMULÁRIO ---------- */
-
-function populateBriefingSelect(list) {
-  const select = document.getElementById("briefing_ref");
-  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
-  list.forEach((b) => {
-    const el = document.createElement("option");
-    el.value = b.id;
-    el.textContent = isPast(b.prazo) ? b.titulo : `${b.titulo} (semana atual)`;
-    select.appendChild(el);
-  });
-}
 
 function populateCategoriaSelect(categorias) {
   const select = document.getElementById("categoria_produto");
@@ -316,12 +151,10 @@ async function countSubmissionsByCupom(cupom) {
   }
 }
 
-/* ---------- FORMULÁRIO PROGRESSIVO ----------
-   Campos são revelados conforme a creator responde:
-   1) identificação (sempre visível)
-   2) seguiu briefing? sim -> seleciona briefing
-                        não -> seleciona categoria -> produto
-   3) plataforma, link, consentimento, boost (+ adcode condicional) */
+/* ---------- FORMULÁRIO ----------
+   Identificação sempre visível; categoria/produto, plataforma,
+   link, consentimento e boost também ficam visíveis direto —
+   só o produto fica escondido até a categoria ser escolhida. */
 
 function revealField(id, show) {
   const el = document.getElementById(id);
@@ -334,24 +167,6 @@ function setupForm() {
   const submitBtn = document.getElementById("submit-btn");
   const adcodeField = document.getElementById("adcode-field");
   const adcodeInput = document.getElementById("adcode");
-
-  form.querySelectorAll('input[name="seguiu_briefing"]').forEach((radio) => {
-    radio.addEventListener("change", () => {
-      const seguiu = form.querySelector('input[name="seguiu_briefing"]:checked')?.value;
-      const sim = seguiu === "sim";
-      const nao = seguiu === "nao";
-
-      revealField("bloco-briefing", sim);
-      revealField("bloco-categoria", nao);
-      revealField("bloco-produto", false); // só aparece depois de escolher categoria
-      if (nao) document.getElementById("categoria_produto").value = "";
-
-      revealField("bloco-plataforma", sim || nao);
-      revealField("bloco-link", sim || nao);
-      revealField("bloco-consentimento", sim || nao);
-      revealField("bloco-boost", sim || nao);
-    });
-  });
 
   form.querySelectorAll('input[name="boost"]').forEach((radio) => {
     radio.addEventListener("change", () => {
@@ -382,7 +197,7 @@ function setupForm() {
     try {
       await submitToBackend(data);
       form.reset();
-      ["bloco-briefing", "bloco-categoria", "bloco-produto", "bloco-plataforma", "bloco-link", "bloco-consentimento", "bloco-boost"].forEach((id) => revealField(id, false));
+      revealField("bloco-produto", false);
       adcodeField.hidden = true;
 
       const total = await countSubmissionsByCupom(data.codigo);
@@ -401,15 +216,12 @@ function setupForm() {
 
 function getFormData(form) {
   const boostChecked = form.querySelector('input[name="boost"]:checked');
-  const seguiuChecked = form.querySelector('input[name="seguiu_briefing"]:checked');
   return {
     nome: form.nome.value.trim(),
     email: form.email.value.trim(),
     whatsapp: form.whatsapp.value.trim(),
     codigo: form.codigo.value.trim(),
     instagram: form.instagram.value.trim().replace(/^@+/, ""),
-    seguiu_briefing: seguiuChecked ? seguiuChecked.value : "",
-    briefing_ref: form.briefing_ref.value,
     categoria_produto: form.categoria_produto.value,
     produto_nome: form.produto_nome.value,
     plataforma: form.plataforma.value,
@@ -434,19 +246,8 @@ function validate(data) {
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
   if (!data.instagram) errors.instagram = "Informe seu @ do Instagram.";
 
-  if (!data.seguiu_briefing) {
-    errors.seguiu_briefing = "Escolha sim ou não.";
-    return errors; // sem essa resposta, não valida os campos condicionais ainda
-  }
-
-  if (data.seguiu_briefing === "sim" && !data.briefing_ref) {
-    errors.briefing_ref = "Selecione a qual briefing esse conteúdo se refere.";
-  }
-
-  if (data.seguiu_briefing === "nao") {
-    if (!data.categoria_produto) errors.categoria_produto = "Selecione a categoria do produto.";
-    if (!data.produto_nome) errors.produto_nome = "Selecione o produto.";
-  }
+  if (!data.categoria_produto) errors.categoria_produto = "Selecione a categoria do produto.";
+  if (!data.produto_nome) errors.produto_nome = "Selecione o produto.";
 
   if (!data.plataforma) errors.plataforma = REQUIRED_MSG;
 
@@ -508,10 +309,10 @@ function buildPayload(data) {
     : null;
 
   return {
-    briefing_id: data.seguiu_briefing === "sim" ? data.briefing_ref : null,
-    seguiu_briefing: data.seguiu_briefing === "sim",
+    briefing_id: null,
+    seguiu_briefing: false,
     categoria_produto: produtoLabel,
-    produto_nome: data.seguiu_briefing === "nao" ? data.produto_nome : null,
+    produto_nome: data.produto_nome || null,
     submitted_at: new Date().toISOString(),
     creator_name: data.nome,
     creator_email: data.email,
