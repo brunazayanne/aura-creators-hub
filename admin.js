@@ -54,9 +54,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
+  document.getElementById("s-filter-produto").addEventListener("change", () => {
+    SUBMISSOES_PAGE = 1;
+    renderSubmissoes();
+  });
   document.getElementById("s-filter-clear").addEventListener("click", () => {
     document.getElementById("s-filter-briefing").value = "";
     document.getElementById("s-filter-plataforma").value = "";
+    document.getElementById("s-filter-produto").value = "";
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
@@ -75,6 +80,28 @@ function populateSubmissaoBriefingFilter() {
     el.textContent = b.titulo;
     select.appendChild(el);
   });
+  select.value = current;
+}
+
+function populateSubmissaoProdutoFilter() {
+  const select = document.getElementById("s-filter-produto");
+  if (!select) return;
+  const current = select.value;
+  const produtos = new Set();
+  let temSemProduto = false;
+  ALL_SUBMISSOES.forEach((s) => {
+    const nome = s.produto_nome || s.categoria_produto || "";
+    if (nome) produtos.add(nome);
+    else temSemProduto = true;
+  });
+  const opcoes = ['<option value="">Todos os produtos</option>'];
+  if (temSemProduto) opcoes.push('<option value="__sem_produto__">Sem produto informado</option>');
+  Array.from(produtos)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .forEach((nome) => {
+      opcoes.push(`<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`);
+    });
+  select.innerHTML = opcoes.join("");
   select.value = current;
 }
 
@@ -517,6 +544,7 @@ async function loadSubmissoes() {
 
   ALL_SUBMISSOES = data || [];
   populateSubmissaoBriefingFilter();
+  populateSubmissaoProdutoFilter();
   renderSubmissoes();
 }
 
@@ -524,11 +552,15 @@ function renderSubmissoes() {
   const list = document.getElementById("s-list");
   const filtroBriefing = document.getElementById("s-filter-briefing")?.value || "";
   const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
+  const filtroProduto = document.getElementById("s-filter-produto")?.value || "";
 
   const data = ALL_SUBMISSOES.filter((s) => {
     if (filtroBriefing === "__sem_briefing__" && s.briefing_id) return false;
     if (filtroBriefing && filtroBriefing !== "__sem_briefing__" && s.briefing_id !== filtroBriefing) return false;
     if (filtroPlataforma && s.content_platform !== filtroPlataforma) return false;
+    const produtoNome = s.produto_nome || s.categoria_produto || "";
+    if (filtroProduto === "__sem_produto__" && produtoNome) return false;
+    if (filtroProduto && filtroProduto !== "__sem_produto__" && produtoNome !== filtroProduto) return false;
     return true;
   });
 
