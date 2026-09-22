@@ -92,7 +92,8 @@ summary:focus-visible {
   justify-content: space-between;
   gap: 12px;
 }
-.logo-aura { display: block; height: 22px; width: auto; }
+.logo-aura { display: block; height: 22px; width: auto; object-fit: contain; }
+.logo-aura--footer { height: 26px; }
 
 /* ---------- BOTÕES ---------- */
 .btn {
@@ -817,6 +818,10 @@ summary:focus-visible {
 }
 .footer__contato { font-size: 12px; color: var(--tan); }
 .footer__contato a { color: var(--tan); }
+.footer__texto { font-size: 12px; color: var(--tan); line-height: 1.6; max-width: 320px; }
+.footer__canais { font-size: 12px; margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+.footer__canais a { color: var(--white); font-weight: 600; }
+.footer__canais span { color: var(--tan); }
 
 /* ============================================
    DESKTOP (min-width 900px) — consistente com o
