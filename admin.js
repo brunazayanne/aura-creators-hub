@@ -21,6 +21,7 @@ let editingBriefingId = null;
 let ALL_SUBMISSOES = [];
 let SUBMISSOES_PAGE = 1;
 const SUBMISSOES_POR_PAGINA = 10;
+let ALL_CHAMADOS = [];
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -65,6 +66,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
+
+  document.getElementById("ch-filter-status").addEventListener("change", renderChamados);
 
   wireVendasUpload();
 });
@@ -150,6 +153,7 @@ async function showApp() {
   loadBriefings();
   loadCategorias();
   await loadSubmissoes();
+  loadChamados();
   loadRelatorio();
 }
 
@@ -735,6 +739,111 @@ async function uploadSubmissionThumb(id, btn) {
   }
 
   loadSubmissoes();
+}
+
+/* ---------- CHAMADOS DE SEEDING ---------- */
+
+async function loadChamados() {
+  const list = document.getElementById("ch-list");
+  const { data, error } = await client
+    .from("aura_hub_seeding_chamados")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  ALL_CHAMADOS = data || [];
+  renderChamados();
+}
+
+function renderChamados() {
+  const list = document.getElementById("ch-list");
+  const filtroStatus = document.getElementById("ch-filter-status")?.value || "";
+
+  if (ALL_CHAMADOS.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum chamado recebido ainda.</p>';
+    return;
+  }
+
+  const data = ALL_CHAMADOS.filter((c) => !filtroStatus || c.status === filtroStatus);
+  if (data.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum chamado encontrado com esse filtro.</p>';
+    return;
+  }
+
+  list.innerHTML = data.map(chamadoRowHtml).join("");
+  wireChamadoRowActions(list);
+}
+
+function chamadoRowHtml(c) {
+  const statusTag = c.status === "respondido"
+    ? '<span class="admin-tag admin-tag--ok">Respondido</span>'
+    : '<span class="admin-tag admin-tag--pending">Em aberto</span>';
+  const recebidoEm = formatDateTime(c.created_at);
+  const respondidoEm = formatDateTime(c.responded_at);
+
+  return `
+    <div class="admin-row admin-row--submissao" data-id="${c.id}">
+      <div class="admin-submissao__info">
+        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
+        <p style="font-size:12px;opacity:.75;">
+          ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
+          ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
+        </p>
+        <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
+        ${
+          c.status === "respondido"
+            ? `<div style="margin-top:10px;padding:10px 12px;background:var(--offwhite);border-radius:var(--radius-sm);">
+                <p style="font-size:12px;opacity:.75;margin-bottom:4px;">Resposta enviada${respondidoEm ? ` em ${escapeHtml(respondidoEm)}` : ""}:</p>
+                <p style="white-space:pre-wrap;">${escapeHtml(c.resposta || "")}</p>
+              </div>`
+            : ""
+        }
+      </div>
+      <div class="admin-submissao__actions" style="flex-direction:column;align-items:stretch;">
+        <textarea data-role="ch-resposta" rows="3" placeholder="Escreva a resposta pra creator" style="font-family:var(--font);font-size:14px;padding:10px 12px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);resize:vertical;">${escapeHtml(c.resposta || "")}</textarea>
+        <button type="button" data-action="save-resposta">${c.status === "respondido" ? "Salvar nova resposta" : "Marcar como respondido"}</button>
+      </div>
+    </div>
+  `;
+}
+
+function wireChamadoRowActions(container) {
+  container.querySelectorAll('[data-action="save-resposta"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const row = btn.closest("[data-id]");
+      const id = row.dataset.id;
+      const textarea = row.querySelector('[data-role="ch-resposta"]');
+      saveChamadoResposta(id, textarea.value.trim(), btn);
+    })
+  );
+}
+
+async function saveChamadoResposta(id, resposta, btn) {
+  if (!resposta) {
+    alert("Escreva a resposta antes de salvar.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Salvando…";
+
+  const { error } = await client
+    .from("aura_hub_seeding_chamados")
+    .update({ status: "respondido", resposta, responded_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    alert(`Erro ao salvar resposta: ${error.message}`);
+    btn.disabled = false;
+    btn.textContent = "Marcar como respondido";
+    return;
+  }
+
+  loadChamados();
 }
 
 /* ---------- RELATÓRIO ---------- */
