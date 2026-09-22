@@ -711,6 +711,7 @@ async function loadRelatorio() {
   const kpisEl = document.getElementById("r-kpis");
   const plataformaEl = document.getElementById("r-plataforma");
   const briefingEl = document.getElementById("r-briefing");
+  const produtoEl = document.getElementById("r-produto");
   const rankingEl = document.getElementById("r-ranking");
 
   // Reaproveita as submissões já carregadas por loadSubmissoes() em vez de
@@ -719,7 +720,7 @@ async function loadRelatorio() {
   const submissions = ALL_SUBMISSOES || [];
 
   if (submissions.length === 0) {
-    [kpisEl, plataformaEl, briefingEl, rankingEl].forEach((el) => {
+    [kpisEl, plataformaEl, briefingEl, produtoEl, rankingEl].forEach((el) => {
       el.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
     });
     return;
@@ -728,6 +729,7 @@ async function loadRelatorio() {
   renderRelatorioKpis(kpisEl, submissions);
   renderRelatorioPlataforma(plataformaEl, submissions);
   renderRelatorioBriefing(briefingEl, submissions);
+  renderRelatorioProduto(produtoEl, submissions);
   renderRelatorioRanking(rankingEl, submissions);
 }
 
@@ -786,6 +788,28 @@ function renderRelatorioBriefing(el, submissions) {
       return `
         <div class="admin-row admin-row--metric">
           <span>${escapeHtml(titulo)}</span>
+          <span class="admin-row__metric-value">${count}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderRelatorioProduto(el, submissions) {
+  const counts = {};
+  submissions.forEach((s) => {
+    const key = s.produto_nome || s.categoria_produto || "__sem_produto__";
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  el.innerHTML = rows
+    .map(([key, count]) => {
+      const label = key === "__sem_produto__" ? "Sem produto informado" : key;
+      return `
+        <div class="admin-row admin-row--metric">
+          <span>${escapeHtml(label)}</span>
           <span class="admin-row__metric-value">${count}</span>
         </div>
       `;
