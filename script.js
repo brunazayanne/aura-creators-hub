@@ -20,7 +20,7 @@
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
-const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted,content_url&order=mural_ordem.asc.nullslast,created_at.desc`;
+const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,boosted,content_url,created_at&order=mural_ordem.asc.nullslast,created_at.desc`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const CAMPANHAS_CONFIG_URL = "briefings.json";
 
@@ -363,19 +363,17 @@ function renderMural(container, creators) {
     .map((c) => {
       const handle = (c.instagram_handle || "").replace(/^@+/, "");
       const profileUrl = handle ? `https://instagram.com/${encodeURIComponent(handle)}` : null;
-      const hasThumb = Boolean(c.thumb_url);
-      const thumbImg = hasThumb
-        ? `<img class="mural__thumb" src="${encodeURI(c.thumb_url)}" alt="Conteúdo de ${escapeHtml(c.nome)}" loading="lazy">`
-        : `<div class="mural__thumb">${plataformaLabel(c.plataforma)}</div>`;
+      const label = `<div class="mural__thumb">${plataformaLabel(c.plataforma)}</div>`;
       const thumb = c.content_url
         ? `<a class="mural__thumb-link" href="${encodeURI(c.content_url)}" target="_blank" rel="noopener" aria-label="Ver conteúdo de ${escapeHtml(c.nome)} no ${plataformaLabel(c.plataforma)}">
-            ${thumbImg}
+            ${label}
             <span class="mural__play" aria-hidden="true">▶</span>
           </a>`
-        : thumbImg;
+        : label;
+      const quando = relativeDate(c.created_at);
 
       return `
-        <div class="mural__card${hasThumb ? "" : " mural__card--no-thumb"}">
+        <div class="mural__card mural__card--no-thumb">
           ${c.boosted ? '<span class="mural__badge">Impulsionado</span>' : ""}
           ${thumb}
           <div class="mural__meta">
@@ -385,11 +383,23 @@ function renderMural(container, creators) {
                 ? `<a href="${profileUrl}" target="_blank" rel="noopener">@${escapeHtml(handle)}</a>`
                 : `<span>${plataformaLabel(c.plataforma)}</span>`
             }
+            ${quando ? `<span class="mural__quando">${escapeHtml(quando)}</span>` : ""}
           </div>
         </div>
       `;
     })
     .join("");
+}
+
+function relativeDate(isoString) {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+  const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return "hoje";
+  if (diffDays === 1) return "ontem";
+  if (diffDays < 7) return `há ${diffDays} dias`;
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
 function plataformaLabel(plataforma) {

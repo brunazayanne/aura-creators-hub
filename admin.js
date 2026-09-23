@@ -593,11 +593,8 @@ function renderSubmissoes() {
             </p>
             ${postedAt ? `<p style="font-size:12px;opacity:.75;">Postado em ${escapeHtml(postedAt)}</p>` : ""}
             <p style="font-size:12px;opacity:.75;">${adcodeTag}</p>
-            ${s.thumb_url ? `<img src="${encodeURI(s.thumb_url)}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;margin-top:6px;">` : ""}
           </div>
           <div class="admin-submissao__actions">
-            <input type="file" accept="image/*" data-role="thumb-input">
-            <button type="button" data-action="upload-thumb">Salvar imagem</button>
             <button type="button" data-action="toggle-approve" data-approved="${s.approved}">${s.approved ? "Tirar do mural" : "Aprovar pro mural"}</button>
             ${
               s.approved
@@ -627,12 +624,6 @@ function renderSubmissoes() {
     btn.addEventListener("click", () => {
       const id = btn.closest("[data-id]").dataset.id;
       toggleApproveSubmission(id, btn.dataset.approved === "true");
-    })
-  );
-  list.querySelectorAll('[data-action="upload-thumb"]').forEach((btn) =>
-    btn.addEventListener("click", () => {
-      const id = btn.closest("[data-id]").dataset.id;
-      uploadSubmissionThumb(id, btn);
     })
   );
   list.querySelectorAll('[data-action="save-ordem"]').forEach((btn) =>
@@ -683,42 +674,6 @@ async function saveMuralOrdem(id, btn) {
     alert(`Erro ao salvar ordem: ${error.message}`);
     return;
   }
-  loadSubmissoes();
-}
-
-async function uploadSubmissionThumb(id, btn) {
-  const row = btn.closest("[data-id]");
-  const input = row.querySelector('[data-role="thumb-input"]');
-  const file = input.files[0];
-
-  if (!file) {
-    alert("Selecione uma imagem primeiro.");
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Enviando…";
-
-  const path = `${id}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
-  const { error: uploadError } = await client.storage.from("mural-thumbs").upload(path, file, { upsert: true });
-
-  if (uploadError) {
-    alert(`Erro ao enviar a imagem: ${uploadError.message}`);
-    btn.disabled = false;
-    btn.textContent = "Salvar imagem";
-    return;
-  }
-
-  const { data: publicUrlData } = client.storage.from("mural-thumbs").getPublicUrl(path);
-  const { error } = await client.from("aura_hub_submissions").update({ thumb_url: publicUrlData.publicUrl }).eq("id", id);
-
-  if (error) {
-    alert(`Erro ao salvar: ${error.message}`);
-    btn.disabled = false;
-    btn.textContent = "Salvar imagem";
-    return;
-  }
-
   loadSubmissoes();
 }
 

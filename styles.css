@@ -485,6 +485,13 @@ summary:focus-visible {
   text-decoration: none;
 }
 .mural__meta a:hover { text-decoration: underline; }
+.mural__quando {
+  display: block;
+  font-size: 10px;
+  color: var(--brown);
+  opacity: 0.6;
+  margin-top: 2px;
+}
 .mural__badge {
   position: absolute;
   top: 8px;
