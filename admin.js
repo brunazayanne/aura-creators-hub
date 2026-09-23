@@ -725,7 +725,6 @@ async function saveMuralOrdem(id, btn) {
 async function loadRelatorio() {
   const kpisEl = document.getElementById("r-kpis");
   const plataformaEl = document.getElementById("r-plataforma");
-  const briefingEl = document.getElementById("r-briefing");
   const produtoEl = document.getElementById("r-produto");
   const rankingEl = document.getElementById("r-ranking");
 
@@ -737,7 +736,7 @@ async function loadRelatorio() {
   const submissions = hubSubmissoes();
 
   if (submissions.length === 0) {
-    [kpisEl, plataformaEl, briefingEl, produtoEl, rankingEl].forEach((el) => {
+    [kpisEl, plataformaEl, produtoEl, rankingEl].forEach((el) => {
       el.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
     });
     return;
@@ -745,7 +744,6 @@ async function loadRelatorio() {
 
   renderRelatorioKpis(kpisEl, submissions);
   renderRelatorioPlataforma(plataformaEl, submissions);
-  renderRelatorioBriefing(briefingEl, submissions);
   renderRelatorioProduto(produtoEl, submissions);
   renderRelatorioRanking(rankingEl, submissions);
 }
@@ -782,30 +780,6 @@ function renderRelatorioPlataforma(el, submissions) {
         <div class="admin-row admin-row--metric">
           <span>${escapeHtml(label)}</span>
           <span class="admin-row__metric-value">${count} <span class="admin-row__metric-pct">(${pct}%)</span></span>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-function renderRelatorioBriefing(el, submissions) {
-  const counts = {};
-  submissions.forEach((s) => {
-    const key = s.briefing_id || "__sem_briefing__";
-    counts[key] = (counts[key] || 0) + 1;
-  });
-
-  const rows = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-  el.innerHTML = rows
-    .map(([key, count]) => {
-      const titulo = key === "__sem_briefing__"
-        ? "Sem briefing (conteúdo por conta própria)"
-        : BRIEFINGS.find((b) => b.id === key)?.titulo || "Briefing removido";
-      return `
-        <div class="admin-row admin-row--metric">
-          <span>${escapeHtml(titulo)}</span>
-          <span class="admin-row__metric-value">${count}</span>
         </div>
       `;
     })

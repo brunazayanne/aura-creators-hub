@@ -782,7 +782,7 @@ summary:focus-visible {
 }
 
 @media (min-width: 900px) {
-  .admin-report-grid { grid-template-columns: repeat(3, 1fr); }
+  .admin-report-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (min-width: 700px) {
