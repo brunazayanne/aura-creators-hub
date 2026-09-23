@@ -22,6 +22,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const DRIVE_UPLOAD_INIT_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-video-impulsionado`;
+const DRIVE_UPLOAD_CHUNK_ENDPOINT = `${DRIVE_UPLOAD_INIT_ENDPOINT}/chunk`;
+// Múltiplo de 256KiB, como o protocolo de upload resumível do Drive exige
+// pra todo pedaço que não seja o último.
+const DRIVE_CHUNK_SIZE = 8 * 1024 * 1024;
 
 const CONTENT_PLATFORM_TAG = "video_impulsionado_drive";
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB — limite confortável pra vídeo bruto de creator
@@ -176,7 +180,13 @@ function updateProgress(fillEl, labelEl, percent) {
   labelEl.textContent = `Enviando... ${rounded}%`;
 }
 
-/* ---------- UPLOAD DIRETO PRO DRIVE (via Edge Function + sessão resumível) ---------- */
+/* ---------- UPLOAD PRO DRIVE (via Edge Function + sessão resumível) ----------
+   O navegador NUNCA manda bytes direto pro Google: a etapa de PUT do
+   upload resumível do Drive não devolve cabeçalho CORS nenhum (só a etapa
+   de abrir a sessão devolve), então o navegador bloqueia essa chamada.
+   Em vez disso, mandamos o vídeo em pedaços pra nossa própria Edge
+   Function (mesma origem seguindo o padrão de CORS que a gente controla),
+   que repassa cada pedaço pro Drive por trás. */
 
 async function uploadVideoToDrive(file, categoriaNome, onProgress) {
   const initResponse = await fetch(DRIVE_UPLOAD_INIT_ENDPOINT, {
@@ -203,38 +213,69 @@ async function uploadVideoToDrive(file, categoriaNome, onProgress) {
     throw new Error(error || "O servidor não retornou uma URL de upload.");
   }
 
-  return await putFileWithProgress(uploadUrl, file, onProgress);
+  return await uploadFileInChunks(uploadUrl, file, onProgress);
 }
 
-function putFileWithProgress(uploadUrl, file, onProgress) {
+function uploadFileInChunks(uploadUrl, file, onProgress) {
+  const total = file.size;
+
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl, true);
-    xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+    let offset = 0;
 
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable && onProgress) {
-        onProgress((event.loaded / event.total) * 100);
-      }
-    });
+    function sendNextChunk() {
+      const end = Math.min(offset + DRIVE_CHUNK_SIZE, total);
+      const chunk = file.slice(offset, end);
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        onProgress && onProgress(100);
-        try {
-          const data = JSON.parse(xhr.responseText);
-          const url = data.webViewLink || (data.id ? `https://drive.google.com/file/d/${data.id}/view` : null);
-          resolve({ id: data.id, url });
-        } catch {
-          reject(new Error("Não conseguimos confirmar o upload no Drive."));
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", DRIVE_UPLOAD_CHUNK_ENDPOINT, true);
+      xhr.setRequestHeader("apikey", SUPABASE_ANON_KEY);
+      xhr.setRequestHeader("Authorization", `Bearer ${SUPABASE_ANON_KEY}`);
+      xhr.setRequestHeader("X-Drive-Upload-Url", uploadUrl);
+      xhr.setRequestHeader("Content-Range", `bytes ${offset}-${end - 1}/${total}`);
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable && onProgress) {
+          onProgress(((offset + event.loaded) / total) * 100);
         }
-      } else {
-        reject(new Error(`Falha no upload pro Drive (status ${xhr.status}).`));
-      }
-    };
+      });
 
-    xhr.onerror = () => reject(new Error("Falha de rede durante o upload."));
-    xhr.send(file);
+      xhr.onload = () => {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(`Falha ao enviar o vídeo pro Drive (status ${xhr.status}).`));
+          return;
+        }
+
+        let data;
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch {
+          reject(new Error("Resposta inesperada do servidor durante o upload."));
+          return;
+        }
+
+        if (data.error) {
+          reject(new Error(data.error));
+          return;
+        }
+
+        if (data.file) {
+          onProgress && onProgress(100);
+          const driveFile = data.file || {};
+          const url = driveFile.webViewLink || (driveFile.id ? `https://drive.google.com/file/d/${driveFile.id}/view` : null);
+          resolve({ id: driveFile.id, url });
+          return;
+        }
+
+        // status 308 = Drive recebeu esse pedaço, ainda faltam mais.
+        offset = end;
+        sendNextChunk();
+      };
+
+      xhr.onerror = () => reject(new Error("Falha de rede durante o envio do vídeo."));
+      xhr.send(chunk);
+    }
+
+    sendNextChunk();
   });
 }
 
