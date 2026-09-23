@@ -168,7 +168,9 @@ async function findOrCreateCategoriaFolder(
     `'${rootFolderId}' in parents and name = '${safeName}' and ` +
     `mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
 
-  const searchUrl = `${DRIVE_FILES_URL}?q=${encodeURIComponent(query)}&fields=files(id,name)&spaces=drive`;
+  const searchUrl =
+    `${DRIVE_FILES_URL}?q=${encodeURIComponent(query)}&fields=files(id,name)&spaces=drive` +
+    `&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives`;
 
   const searchResponse = await fetch(searchUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -183,7 +185,7 @@ async function findOrCreateCategoriaFolder(
     return searchData.files[0].id;
   }
 
-  const createResponse = await fetch(`${DRIVE_FILES_URL}?fields=id`, {
+  const createResponse = await fetch(`${DRIVE_FILES_URL}?fields=id&supportsAllDrives=true`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -210,7 +212,7 @@ async function initiateResumableUpload(
   accessToken: string,
   params: { fileName: string; fileSize: number; mimeType: string; parentFolderId: string },
 ): Promise<string> {
-  const initUrl = `${DRIVE_UPLOAD_URL}?uploadType=resumable&fields=id,webViewLink`;
+  const initUrl = `${DRIVE_UPLOAD_URL}?uploadType=resumable&fields=id,webViewLink&supportsAllDrives=true`;
 
   const response = await fetch(initUrl, {
     method: "POST",
