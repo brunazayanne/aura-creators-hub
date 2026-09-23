@@ -29,6 +29,7 @@ const PLATAFORMA_LABELS = {
   youtube_shorts: "YouTube (Shorts)",
   youtube_longo: "YouTube (Conteúdo longo)",
   outros: "Outros",
+  video_impulsionado_drive: "Vídeo Impulsionado (Drive)",
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
