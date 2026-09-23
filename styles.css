@@ -600,6 +600,20 @@ summary:focus-visible {
   gap: 14px;
 }
 .admin-login h1 { font-size: 18px; }
+.admin-groups { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 2px solid var(--tan); padding-bottom: 20px; }
+.admin-group {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--brown);
+  background: var(--white);
+  color: var(--brown);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.admin-group[aria-selected="true"] { background: var(--brown); color: var(--white); border-color: var(--brown); }
+.admin-group-content[hidden] { display: none; }
 .admin-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .admin-tab {
   padding: 10px 16px;

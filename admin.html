@@ -34,6 +34,13 @@
   </header>
 
   <div class="admin-wrap">
+    <div class="admin-groups" role="tablist">
+      <button type="button" class="admin-group" data-group="hub" aria-selected="true">Hub de Conteúdos</button>
+      <button type="button" class="admin-group" data-group="video-impulsionado" aria-selected="false">Vídeo Impulsionado</button>
+    </div>
+
+    <!-- GRUPO: HUB DE CONTEÚDOS -->
+    <div class="admin-group-content" data-group-content="hub">
     <div class="admin-tabs" role="tablist">
       <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
       <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
@@ -123,7 +130,6 @@
             <option value="youtube_shorts">YouTube (Shorts)</option>
             <option value="youtube_longo">YouTube (Conteúdo longo)</option>
             <option value="outros">Outros</option>
-            <option value="video_impulsionado_drive">Vídeo Impulsionado (Drive)</option>
           </select>
           <select id="s-filter-produto">
             <option value="">Todos os produtos</option>
@@ -176,6 +182,31 @@
         <div class="admin-list" id="v-sem-match" style="margin-top:16px;"></div>
       </div>
     </section>
+    </div>
+
+    <!-- GRUPO: VÍDEO IMPULSIONADO -->
+    <div class="admin-group-content" data-group-content="video-impulsionado" hidden>
+      <div class="admin-card">
+        <h2>Visão geral</h2>
+        <div class="admin-kpis" id="vi-kpis"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Ranking de creators</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Quem mais enviou vídeo pra impulsionar (por cupom).</p>
+        <div class="admin-list" id="vi-ranking"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Vídeos enviados</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Todo vídeo bruto enviado pra virar anúncio impulsionado.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <select id="vi-filter-produto">
+            <option value="">Todos os produtos</option>
+          </select>
+          <button type="button" class="btn btn--small btn--outline-light" id="vi-filter-clear">Limpar filtro</button>
+        </div>
+        <div class="admin-list" id="vi-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </div>
   </div>
 </div>
 

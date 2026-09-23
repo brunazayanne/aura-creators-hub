@@ -19,7 +19,9 @@ let BRIEFINGS = [];
 let editingBriefingId = null;
 let ALL_SUBMISSOES = [];
 let SUBMISSOES_PAGE = 1;
+let VI_SUBMISSOES_PAGE = 1;
 const SUBMISSOES_POR_PAGINA = 10;
+const VIDEO_IMPULSIONADO_PLATFORM = "video_impulsionado_drive";
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -42,6 +44,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.querySelectorAll(".admin-tab").forEach((tab) => {
     tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+  });
+
+  document.querySelectorAll(".admin-group").forEach((group) => {
+    group.addEventListener("click", () => switchGroup(group.dataset.group));
   });
 
   document.getElementById("b-add").addEventListener("click", saveBriefing);
@@ -68,6 +74,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderSubmissoes();
   });
 
+  document.getElementById("vi-filter-produto")?.addEventListener("change", () => {
+    VI_SUBMISSOES_PAGE = 1;
+    renderVIList();
+  });
+  document.getElementById("vi-filter-clear")?.addEventListener("click", () => {
+    document.getElementById("vi-filter-produto").value = "";
+    VI_SUBMISSOES_PAGE = 1;
+    renderVIList();
+  });
+
   wireVendasUpload();
 });
 
@@ -91,7 +107,29 @@ function populateSubmissaoProdutoFilter() {
   const current = select.value;
   const produtos = new Set();
   let temSemProduto = false;
-  ALL_SUBMISSOES.forEach((s) => {
+  hubSubmissoes().forEach((s) => {
+    const nome = s.produto_nome || s.categoria_produto || "";
+    if (nome) produtos.add(nome);
+    else temSemProduto = true;
+  });
+  const opcoes = ['<option value="">Todos os produtos</option>'];
+  if (temSemProduto) opcoes.push('<option value="__sem_produto__">Sem produto informado</option>');
+  Array.from(produtos)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .forEach((nome) => {
+      opcoes.push(`<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`);
+    });
+  select.innerHTML = opcoes.join("");
+  select.value = current;
+}
+
+function populateVIProdutoFilter() {
+  const select = document.getElementById("vi-filter-produto");
+  if (!select) return;
+  const current = select.value;
+  const produtos = new Set();
+  let temSemProduto = false;
+  viSubmissoes().forEach((s) => {
     const nome = s.produto_nome || s.categoria_produto || "";
     if (nome) produtos.add(nome);
     else temSemProduto = true;
@@ -110,6 +148,24 @@ function populateSubmissaoProdutoFilter() {
 function switchTab(name) {
   document.querySelectorAll(".admin-tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
   document.querySelectorAll(".admin-panel").forEach((p) => p.dataset.active = String(p.dataset.panel === name));
+}
+
+function switchGroup(name) {
+  document.querySelectorAll(".admin-group").forEach((g) => g.setAttribute("aria-selected", String(g.dataset.group === name)));
+  document.querySelectorAll(".admin-group-content").forEach((c) => {
+    c.hidden = c.dataset.groupContent !== name;
+  });
+}
+
+/* Vídeo Impulsionado usa a mesma tabela aura_hub_submissions do hub
+   principal, distinguido pelo content_platform. Essas duas funções
+   separam o dataset já carregado em memória — sem select novo no banco. */
+function hubSubmissoes() {
+  return ALL_SUBMISSOES.filter((s) => s.content_platform !== VIDEO_IMPULSIONADO_PLATFORM);
+}
+
+function viSubmissoes() {
+  return ALL_SUBMISSOES.filter((s) => s.content_platform === VIDEO_IMPULSIONADO_PLATFORM);
 }
 
 /* ---------- AUTENTICAÇÃO ---------- */
@@ -468,6 +524,7 @@ async function loadSubmissoes() {
   populateSubmissaoBriefingFilter();
   populateSubmissaoProdutoFilter();
   renderSubmissoes();
+  renderVISection();
 }
 
 function renderSubmissoes() {
@@ -476,7 +533,8 @@ function renderSubmissoes() {
   const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
   const filtroProduto = document.getElementById("s-filter-produto")?.value || "";
 
-  const data = ALL_SUBMISSOES.filter((s) => {
+  const base = hubSubmissoes();
+  const data = base.filter((s) => {
     if (filtroBriefing === "__sem_briefing__" && s.briefing_id) return false;
     if (filtroBriefing && filtroBriefing !== "__sem_briefing__" && s.briefing_id !== filtroBriefing) return false;
     if (filtroPlataforma && s.content_platform !== filtroPlataforma) return false;
@@ -486,7 +544,7 @@ function renderSubmissoes() {
     return true;
   });
 
-  if (ALL_SUBMISSOES.length === 0) {
+  if (base.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
     return;
   }
@@ -671,7 +729,9 @@ async function loadRelatorio() {
   // Reaproveita as submissões já carregadas por loadSubmissoes() em vez de
   // repetir um select * na mesma tabela — reduz carga no banco a cada
   // abertura do painel (projeto está no plano free do Supabase).
-  const submissions = ALL_SUBMISSOES || [];
+  // hubSubmissoes() exclui os envios de Vídeo Impulsionado, que têm
+  // relatório próprio na outra aba do menu.
+  const submissions = hubSubmissoes();
 
   if (submissions.length === 0) {
     [kpisEl, plataformaEl, briefingEl, produtoEl, rankingEl].forEach((el) => {
@@ -799,6 +859,118 @@ function renderRelatorioRanking(el, submissions) {
     `
     )
     .join("");
+}
+
+/* ---------- VÍDEO IMPULSIONADO (mesma tabela do hub, filtrada por content_platform) ---------- */
+
+function renderVISection() {
+  const submissions = viSubmissoes();
+  const kpisEl = document.getElementById("vi-kpis");
+  const rankingEl = document.getElementById("vi-ranking");
+  if (!kpisEl || !rankingEl) return;
+
+  if (submissions.length === 0) {
+    kpisEl.innerHTML = '<p class="admin-empty">Nenhum vídeo enviado ainda.</p>';
+    rankingEl.innerHTML = '<p class="admin-empty">Nenhum vídeo enviado ainda.</p>';
+  } else {
+    renderVIKpis(kpisEl, submissions);
+    renderRelatorioRanking(rankingEl, submissions);
+  }
+
+  populateVIProdutoFilter();
+  renderVIList();
+}
+
+function renderVIKpis(el, submissions) {
+  const total = submissions.length;
+  const selecionados = submissions.filter((s) => s.approved).length;
+  const pendentes = total - selecionados;
+  const creatorsUnicas = new Set(submissions.map((s) => (s.coupon_code || "").toLowerCase()).filter(Boolean)).size;
+
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${total}</span><span class="admin-kpi__label">Vídeos enviados</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${selecionados}</span><span class="admin-kpi__label">Selecionados pra impulsionar</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${pendentes}</span><span class="admin-kpi__label">Pendentes</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${creatorsUnicas}</span><span class="admin-kpi__label">Creators únicas</span></div>
+  `;
+}
+
+function renderVIList() {
+  const list = document.getElementById("vi-list");
+  if (!list) return;
+  const filtroProduto = document.getElementById("vi-filter-produto")?.value || "";
+
+  const base = viSubmissoes();
+  const data = base.filter((s) => {
+    const produtoNome = s.produto_nome || s.categoria_produto || "";
+    if (filtroProduto === "__sem_produto__" && produtoNome) return false;
+    if (filtroProduto && filtroProduto !== "__sem_produto__" && produtoNome !== filtroProduto) return false;
+    return true;
+  });
+
+  if (base.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum vídeo enviado ainda.</p>';
+    return;
+  }
+  if (data.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum vídeo encontrado com esse filtro.</p>';
+    return;
+  }
+
+  const totalPaginas = Math.max(1, Math.ceil(data.length / SUBMISSOES_POR_PAGINA));
+  if (VI_SUBMISSOES_PAGE > totalPaginas) VI_SUBMISSOES_PAGE = totalPaginas;
+  if (VI_SUBMISSOES_PAGE < 1) VI_SUBMISSOES_PAGE = 1;
+
+  const inicio = (VI_SUBMISSOES_PAGE - 1) * SUBMISSOES_POR_PAGINA;
+  const pageData = data.slice(inicio, inicio + SUBMISSOES_POR_PAGINA);
+
+  const rowsHtml = pageData
+    .map((s) => {
+      const statusTag = s.approved
+        ? '<span class="admin-tag admin-tag--ok">Selecionado pra impulsionar</span>'
+        : '<span class="admin-tag admin-tag--pending">Pendente</span>';
+      const produtoLabel = s.produto_nome || s.categoria_produto || "Sem produto informado";
+      const postedAt = formatDateTime(s.created_at);
+
+      return `
+        <div class="admin-row admin-row--submissao" data-id="${s.id}">
+          <div class="admin-submissao__info">
+            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong>${s.coupon_code ? ` — cupom <strong>${escapeHtml(s.coupon_code)}</strong>` : ""} ${statusTag}</p>
+            <p style="font-size:12px;opacity:.75;">
+              ${escapeHtml(produtoLabel)}
+              ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver vídeo no Drive</a>` : ""}
+            </p>
+            ${postedAt ? `<p style="font-size:12px;opacity:.75;">Enviado em ${escapeHtml(postedAt)}</p>` : ""}
+          </div>
+          <div class="admin-submissao__actions">
+            <button type="button" data-action="toggle-vi-approve" data-approved="${s.approved}">${s.approved ? "Tirar da seleção" : "Selecionar pra impulsionar"}</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  const pagerHtml = `
+    <div class="admin-pager" style="display:flex;align-items:center;gap:14px;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--placeholder-gray);">
+      <button type="button" class="btn btn--small btn--outline" id="vi-pager-prev" ${VI_SUBMISSOES_PAGE <= 1 ? "disabled" : ""}>&larr; Página anterior</button>
+      <span style="font-size:13px;opacity:.75;">Página ${VI_SUBMISSOES_PAGE} de ${totalPaginas}</span>
+      <button type="button" class="btn btn--small btn--outline" id="vi-pager-next" ${VI_SUBMISSOES_PAGE >= totalPaginas ? "disabled" : ""}>Próxima página &rarr;</button>
+    </div>
+  `;
+
+  list.innerHTML = rowsHtml + (totalPaginas > 1 ? pagerHtml : "");
+
+  list.querySelectorAll('[data-action="toggle-vi-approve"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-id]").dataset.id;
+      toggleApproveSubmission(id, btn.dataset.approved === "true");
+    })
+  );
+
+  const prevBtn = document.getElementById("vi-pager-prev");
+  const nextBtn = document.getElementById("vi-pager-next");
+  if (prevBtn) prevBtn.addEventListener("click", () => { VI_SUBMISSOES_PAGE -= 1; renderVIList(); });
+  if (nextBtn) nextBtn.addEventListener("click", () => { VI_SUBMISSOES_PAGE += 1; renderVIList(); });
 }
 
 /* ---------- CRUZAMENTO COM VENDAS (upload de CSV, sem persistência) ---------- */
