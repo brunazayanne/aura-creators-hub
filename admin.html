@@ -186,6 +186,13 @@
 
     <!-- GRUPO: VÍDEO IMPULSIONADO -->
     <div class="admin-group-content" data-group-content="video-impulsionado" hidden>
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab" data-tab="vi-geral" aria-selected="true">Visão geral</button>
+      <button type="button" class="admin-tab" data-tab="vi-submissoes" aria-selected="false">Submissões</button>
+    </div>
+
+    <!-- VISÃO GERAL -->
+    <section class="admin-panel" data-panel="vi-geral" data-active="true">
       <div class="admin-card">
         <h2>Visão geral</h2>
         <div class="admin-kpis" id="vi-kpis"><p class="admin-empty">Carregando…</p></div>
@@ -195,6 +202,10 @@
         <p class="section__microcopy" style="margin-bottom:16px;">Quem mais enviou vídeo pra impulsionar (por cupom).</p>
         <div class="admin-list" id="vi-ranking"><p class="admin-empty">Carregando…</p></div>
       </div>
+    </section>
+
+    <!-- SUBMISSÕES -->
+    <section class="admin-panel" data-panel="vi-submissoes">
       <div class="admin-card">
         <h2>Vídeos enviados</h2>
         <p class="section__microcopy" style="margin-bottom:16px;">Todo vídeo bruto enviado pra virar anúncio impulsionado.</p>
@@ -202,10 +213,16 @@
           <select id="vi-filter-produto">
             <option value="">Todos os produtos</option>
           </select>
-          <button type="button" class="btn btn--small btn--outline-light" id="vi-filter-clear">Limpar filtro</button>
+          <select id="vi-filter-status">
+            <option value="">Todos os status</option>
+            <option value="selecionado">Selecionado pra impulsionar</option>
+            <option value="pendente">Pendente</option>
+          </select>
+          <button type="button" class="btn btn--small btn--outline-light" id="vi-filter-clear">Limpar filtros</button>
         </div>
         <div class="admin-list" id="vi-list"><p class="admin-empty">Carregando…</p></div>
       </div>
+    </section>
     </div>
   </div>
 </div>

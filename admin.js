@@ -78,8 +78,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     VI_SUBMISSOES_PAGE = 1;
     renderVIList();
   });
+  document.getElementById("vi-filter-status")?.addEventListener("change", () => {
+    VI_SUBMISSOES_PAGE = 1;
+    renderVIList();
+  });
   document.getElementById("vi-filter-clear")?.addEventListener("click", () => {
     document.getElementById("vi-filter-produto").value = "";
+    document.getElementById("vi-filter-status").value = "";
     VI_SUBMISSOES_PAGE = 1;
     renderVIList();
   });
@@ -899,12 +904,15 @@ function renderVIList() {
   const list = document.getElementById("vi-list");
   if (!list) return;
   const filtroProduto = document.getElementById("vi-filter-produto")?.value || "";
+  const filtroStatus = document.getElementById("vi-filter-status")?.value || "";
 
   const base = viSubmissoes();
   const data = base.filter((s) => {
     const produtoNome = s.produto_nome || s.categoria_produto || "";
     if (filtroProduto === "__sem_produto__" && produtoNome) return false;
     if (filtroProduto && filtroProduto !== "__sem_produto__" && produtoNome !== filtroProduto) return false;
+    if (filtroStatus === "selecionado" && !s.approved) return false;
+    if (filtroStatus === "pendente" && s.approved) return false;
     return true;
   });
 
