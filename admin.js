@@ -15,7 +15,6 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let CATEGORIAS = [];
-let PRODUTOS = [];
 let BRIEFINGS = [];
 let editingBriefingId = null;
 let ALL_SUBMISSOES = [];
@@ -25,9 +24,11 @@ const SUBMISSOES_POR_PAGINA = 10;
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
   instagram_story: "Instagram (Story)",
+  instagram_carrossel: "Instagram (Carrossel)",
   tiktok: "TikTok",
   youtube_shorts: "YouTube (Shorts)",
   youtube_longo: "YouTube (Conteúdo longo)",
+  outros: "Outros",
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -368,15 +369,20 @@ async function deleteBriefing(id) {
   loadBriefings();
 }
 
-/* ---------- CATEGORIAS + PRODUTOS (aninhados) ---------- */
+/* ---------- CATEGORIAS (lista única, sem produtos aninhados) ----------
+   Antes existia uma segunda etapa (produto específico por SKU/fragrância)
+   dentro de cada categoria. Simplificado em 23/09/2026 pra um único campo
+   genérico — a creator escolhe o tipo de produto (Body Splash, Perfume,
+   Body Lotion, etc.), sem precisar identificar a fragrância exata.
+   A tabela aura_hub_produtos continua existindo (histórico), mas não é
+   mais gerida por aqui nem usada pelo formulário público. */
 
 async function loadCategorias() {
   const list = document.getElementById("c-list");
-
-  const [{ data: categorias, error: catError }, { data: produtos, error: prodError }] = await Promise.all([
-    client.from("aura_hub_categorias").select("*").order("ordem", { ascending: true }),
-    client.from("aura_hub_produtos").select("*").order("ordem", { ascending: true }),
-  ]);
+  const { data: categorias, error: catError } = await client
+    .from("aura_hub_categorias")
+    .select("*")
+    .order("ordem", { ascending: true });
 
   if (catError) {
     list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(catError.message)}</p>`;
@@ -384,7 +390,6 @@ async function loadCategorias() {
   }
 
   CATEGORIAS = categorias || [];
-  PRODUTOS = prodError ? [] : produtos || [];
 
   if (CATEGORIAS.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhuma categoria cadastrada ainda.</p>';
@@ -392,72 +397,25 @@ async function loadCategorias() {
   }
 
   list.innerHTML = CATEGORIAS
-    .map((c) => {
-      const produtosDaCategoria = PRODUTOS.filter((p) => p.categoria_id === c.id);
-      const produtosHtml = produtosDaCategoria.length
-        ? produtosDaCategoria
-            .map(
-              (p) => `
-              <div class="admin-row admin-row--nested${p.ativo ? "" : " admin-row--inativo"}">
-                <span>${escapeHtml(p.nome)}</span>
-                <div class="admin-row__actions">
-                  <button data-action="toggle-produto" data-id="${p.id}" data-ativo="${p.ativo}">${p.ativo ? "Desativar" : "Ativar"}</button>
-                  <button class="danger" data-action="delete-produto" data-id="${p.id}">Excluir</button>
-                </div>
-              </div>
-            `
-            )
-            .join("")
-        : '<p class="admin-empty">Nenhum produto nessa categoria ainda.</p>';
-
-      return `
-        <details class="admin-categoria" data-id="${c.id}">
-          <summary>
-            <span>${escapeHtml(c.nome)}${c.ativo ? "" : " (inativa)"}</span>
-            <span class="admin-row__actions">
-              <button type="button" data-action="toggle-categoria" data-id="${c.id}" data-ativo="${c.ativo}">${c.ativo ? "Desativar" : "Ativar"}</button>
-              <button type="button" class="danger" data-action="delete-categoria" data-id="${c.id}">Excluir</button>
-            </span>
-          </summary>
-          <div class="admin-categoria__produtos">
-            ${produtosHtml}
-            <div class="admin-form-row admin-form-row--full admin-form-row--inline">
-              <input type="text" placeholder="Nome do novo produto" data-role="novo-produto-nome">
-              <input type="url" placeholder="URL da imagem (opcional)" data-role="novo-produto-imagem">
-              <button type="button" data-action="add-produto" data-categoria-id="${c.id}">Adicionar produto</button>
-            </div>
+    .map(
+      (c) => `
+        <div class="admin-row${c.ativo ? "" : " admin-row--inativo"}">
+          <span>${escapeHtml(c.nome)}${c.ativo ? "" : " (inativa)"}</span>
+          <div class="admin-row__actions">
+            <button type="button" data-action="toggle-categoria" data-id="${c.id}" data-ativo="${c.ativo}">${c.ativo ? "Desativar" : "Ativar"}</button>
+            <button type="button" class="danger" data-action="delete-categoria" data-id="${c.id}">Excluir</button>
           </div>
-        </details>
-      `;
-    })
+        </div>
+      `
+    )
     .join("");
 
   list.querySelectorAll('[data-action="toggle-categoria"]').forEach((btn) =>
-    btn.addEventListener("click", (event) => {
-      event.preventDefault();
-      toggleCategoria(btn.dataset.id, btn.dataset.ativo === "true");
-    })
+    btn.addEventListener("click", () => toggleCategoria(btn.dataset.id, btn.dataset.ativo === "true"))
   );
   list.querySelectorAll('[data-action="delete-categoria"]').forEach((btn) =>
-    btn.addEventListener("click", (event) => {
-      event.preventDefault();
-      deleteCategoria(btn.dataset.id);
-    })
+    btn.addEventListener("click", () => deleteCategoria(btn.dataset.id))
   );
-  list.querySelectorAll('[data-action="toggle-produto"]').forEach((btn) =>
-    btn.addEventListener("click", () => toggleProduto(btn.dataset.id, btn.dataset.ativo === "true"))
-  );
-  list.querySelectorAll('[data-action="delete-produto"]').forEach((btn) =>
-    btn.addEventListener("click", () => deleteProduto(btn.dataset.id))
-  );
-  list.querySelectorAll('[data-action="add-produto"]').forEach((btn) =>
-    btn.addEventListener("click", () => addProdutoInline(btn.dataset.categoriaId, btn))
-  );
-
-  // impede que clicar nas ações dentro do <summary> também abra/feche o accordion
-  list.querySelectorAll(".admin-categoria > summary .admin-row__actions").forEach((el) => {
-    el.addEventListener("click", (event) => event.stopPropagation());
-  });
 }
 
 async function addCategoria() {
@@ -486,45 +444,8 @@ async function toggleCategoria(id, ativoAtual) {
 }
 
 async function deleteCategoria(id) {
-  if (!confirm("Excluir essa categoria? Os produtos ligados a ela também serão excluídos.")) return;
+  if (!confirm("Excluir essa categoria?")) return;
   await client.from("aura_hub_categorias").delete().eq("id", id);
-  loadCategorias();
-}
-
-async function addProdutoInline(categoriaId, btn) {
-  const details = btn.closest(".admin-categoria");
-  const nomeInput = details.querySelector('[data-role="novo-produto-nome"]');
-  const imagemInput = details.querySelector('[data-role="novo-produto-imagem"]');
-  const nome = nomeInput.value.trim();
-  const imagem_url = imagemInput.value.trim();
-
-  if (!nome) {
-    nomeInput.focus();
-    return;
-  }
-
-  btn.disabled = true;
-  const { error } = await client.from("aura_hub_produtos").insert({
-    categoria_id: categoriaId, nome, imagem_url: imagem_url || null, ordem: 0,
-  });
-  btn.disabled = false;
-
-  if (error) {
-    alert(`Erro ao adicionar produto: ${error.message}`);
-    return;
-  }
-
-  loadCategorias();
-}
-
-async function toggleProduto(id, ativoAtual) {
-  await client.from("aura_hub_produtos").update({ ativo: !ativoAtual }).eq("id", id);
-  loadCategorias();
-}
-
-async function deleteProduto(id) {
-  if (!confirm("Excluir esse produto?")) return;
-  await client.from("aura_hub_produtos").delete().eq("id", id);
   loadCategorias();
 }
 

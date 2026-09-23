@@ -22,21 +22,17 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const MURAL_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_mural?select=nome,instagram_handle,plataforma,thumb_url,boosted,content_url&order=mural_ordem.asc.nullslast,created_at.desc`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
-const PRODUTOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_produtos?select=*&ativo=eq.true&order=ordem.asc`;
 const CAMPANHAS_CONFIG_URL = "briefings.json";
 
 let CATEGORIAS = [];
-let PRODUTOS = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const [categorias, produtos, campanhasConfig] = await Promise.all([
+  const [categorias, campanhasConfig] = await Promise.all([
     fetchSupabaseList(CATEGORIAS_ENDPOINT),
-    fetchSupabaseList(PRODUTOS_ENDPOINT),
     loadCampanhasConfig(),
   ]);
 
   CATEGORIAS = categorias;
-  PRODUTOS = produtos;
 
   renderCampanhas(campanhasConfig);
   populateCategoriaSelect(CATEGORIAS);
@@ -106,22 +102,6 @@ function populateCategoriaSelect(categorias) {
     const el = document.createElement("option");
     el.value = cat.id;
     el.textContent = cat.nome;
-    select.appendChild(el);
-  });
-
-  select.addEventListener("change", () => {
-    populateProdutoSelect(select.value);
-    revealField("bloco-produto", true);
-  });
-}
-
-function populateProdutoSelect(categoriaId) {
-  const select = document.getElementById("produto_nome");
-  select.innerHTML = '<option value="" disabled selected>Identifique o produto</option>';
-  PRODUTOS.filter((p) => p.categoria_id === categoriaId).forEach((p) => {
-    const el = document.createElement("option");
-    el.value = p.nome;
-    el.textContent = p.nome;
     select.appendChild(el);
   });
 }
@@ -197,7 +177,6 @@ function setupForm() {
     try {
       await submitToBackend(data);
       form.reset();
-      revealField("bloco-produto", false);
       adcodeField.hidden = true;
 
       const total = await countSubmissionsByCupom(data.codigo);
@@ -223,7 +202,6 @@ function getFormData(form) {
     codigo: form.codigo.value.trim(),
     instagram: form.instagram.value.trim().replace(/^@+/, ""),
     categoria_produto: form.categoria_produto.value,
-    produto_nome: form.produto_nome.value,
     plataforma: form.plataforma.value,
     link: form.link.value.trim(),
     consentimento: form.consentimento.checked,
@@ -246,8 +224,7 @@ function validate(data) {
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
   if (!data.instagram) errors.instagram = "Informe seu @ do Instagram.";
 
-  if (!data.categoria_produto) errors.categoria_produto = "Selecione a categoria do produto.";
-  if (!data.produto_nome) errors.produto_nome = "Selecione o produto.";
+  if (!data.categoria_produto) errors.categoria_produto = "Selecione o produto.";
 
   if (!data.plataforma) errors.plataforma = REQUIRED_MSG;
 
@@ -277,9 +254,10 @@ function isValidContentLink(url, plataforma) {
   // no ar ou a creator prefere mandar o arquivo direto.
   if (/drive\.google\.com|docs\.google\.com|dropbox\.com|1drv\.ms|onedrive\.live\.com/.test(host)) return true;
 
-  if (plataforma === "instagram" || plataforma === "instagram_story") return host.includes("instagram.com");
+  if (plataforma === "instagram" || plataforma === "instagram_story" || plataforma === "instagram_carrossel") return host.includes("instagram.com");
   if (plataforma === "tiktok") return host.includes("tiktok.com");
   if (plataforma === "youtube_shorts" || plataforma === "youtube_longo") return host.includes("youtube.com") || host.includes("youtu.be");
+  if (plataforma === "outros") return true;
   return /instagram\.com|tiktok\.com|youtube\.com|youtu\.be/.test(host);
 }
 
@@ -312,7 +290,7 @@ function buildPayload(data) {
     briefing_id: null,
     seguiu_briefing: false,
     categoria_produto: produtoLabel,
-    produto_nome: data.produto_nome || null,
+    produto_nome: null,
     submitted_at: new Date().toISOString(),
     creator_name: data.nome,
     creator_email: data.email,
@@ -417,6 +395,7 @@ function renderMural(container, creators) {
 function plataformaLabel(plataforma) {
   if (plataforma === "tiktok") return "TikTok";
   if (plataforma === "youtube_shorts" || plataforma === "youtube_longo") return "YouTube";
+  if (plataforma === "outros") return "Outros";
   return "Instagram";
 }
 

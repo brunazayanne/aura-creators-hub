@@ -116,19 +116,11 @@
         </div>
 
         <div class="field" id="bloco-categoria">
-          <label for="categoria_produto">Qual categoria de produto? *</label>
+          <label for="categoria_produto">Com qual produto você gravou? *</label>
           <select id="categoria_produto" name="categoria_produto">
             <option value="" disabled selected>Selecione</option>
           </select>
           <span class="field__error" data-error-for="categoria_produto"></span>
-        </div>
-
-        <div class="field field--reveal" id="bloco-produto" hidden>
-          <label for="produto_nome">Com qual produto você gravou? *</label>
-          <select id="produto_nome" name="produto_nome">
-            <option value="" disabled selected>Selecione</option>
-          </select>
-          <span class="field__error" data-error-for="produto_nome"></span>
         </div>
 
         <div class="field" id="bloco-plataforma">
@@ -137,9 +129,11 @@
             <option value="" disabled selected>Selecione</option>
             <option value="instagram">Instagram (Reels)</option>
             <option value="instagram_story">Instagram (Story)</option>
+            <option value="instagram_carrossel">Instagram (Carrossel)</option>
             <option value="tiktok">TikTok</option>
             <option value="youtube_shorts">YouTube (Shorts)</option>
             <option value="youtube_longo">YouTube (Conteúdo longo)</option>
+            <option value="outros">Outros</option>
           </select>
           <span class="field__error" data-error-for="plataforma"></span>
         </div>
