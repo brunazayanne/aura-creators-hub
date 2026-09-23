@@ -115,8 +115,8 @@ function setupForm() {
 
       const total = await countSubmissionsByCupom(data.codigo);
       feedback.textContent = total
-        ? `Recebemos seu vídeo — esse já é o seu ${total}º envio! Nosso time confere o material e, se ele for selecionado pra impulsionar, avisamos você pelo WhatsApp informado.`
-        : "Recebemos seu vídeo. Nosso time confere o material e, se ele for selecionado pra impulsionar, avisamos você pelo WhatsApp informado.";
+        ? `Recebemos seu vídeo — esse já é o seu ${total}º envio! Nosso time confere o material e avisa você se ele for selecionado pra impulsionar.`
+        : "Recebemos seu vídeo. Nosso time confere o material e avisa você se ele for selecionado pra impulsionar.";
       feedback.dataset.state = "success";
     } catch (err) {
       feedback.textContent = "Algo não saiu como esperado. Tenta enviar de novo em alguns instantes.";
@@ -197,10 +197,13 @@ function buildPayload(data) {
     produto_nome: null,
     submitted_at: new Date().toISOString(),
     creator_name: data.nome,
-    creator_email: data.email,
-    creator_phone: data.whatsapp,
+    // creator_email / creator_phone / instagram_handle são colunas NOT NULL
+    // na aura_hub_submissions, mas esse formulário não pede mais esses dados —
+    // manda string vazia pra não quebrar o insert.
+    creator_email: "",
+    creator_phone: "",
     coupon_code: data.codigo,
-    instagram_handle: data.instagram,
+    instagram_handle: "",
     content_platform: CONTENT_PLATFORM_TAG,
     content_url: data.link,
     consent_public_display: false,
