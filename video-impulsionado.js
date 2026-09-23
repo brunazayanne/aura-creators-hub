@@ -130,10 +130,7 @@ function setupForm() {
 function getFormData(form) {
   return {
     nome: form.nome.value.trim(),
-    email: form.email.value.trim(),
-    whatsapp: form.whatsapp.value.trim(),
     codigo: form.codigo.value.trim(),
-    instagram: form.instagram.value.trim().replace(/^@+/, ""),
     categoria_produto: form.categoria_produto.value,
     link: form.link.value.trim(),
   };
@@ -144,14 +141,7 @@ function validate(data) {
   const REQUIRED_MSG = "Esse campo é obrigatório.";
 
   if (!data.nome) errors.nome = REQUIRED_MSG;
-  if (!data.email) {
-    errors.email = REQUIRED_MSG;
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = "Confira se o e-mail foi digitado corretamente.";
-  }
-  if (!data.whatsapp) errors.whatsapp = REQUIRED_MSG;
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
-  if (!data.instagram) errors.instagram = "Informe seu @ do Instagram.";
 
   if (!data.categoria_produto) errors.categoria_produto = "Selecione o produto.";
 
