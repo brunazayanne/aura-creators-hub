@@ -116,8 +116,8 @@
     <section class="admin-panel" data-panel="submissoes">
       <div class="admin-card">
         <h2>Submissões recebidas</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Aprove pra publicar no mural e suba a imagem que representa o conteúdo.</p>
-        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <p class="section__microcopy" style="margin-bottom:16px;">Aprove pra publicar no mural.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
           <select id="s-filter-briefing">
             <option value="">Todos os briefings</option>
           </select>
@@ -134,6 +134,12 @@
           <select id="s-filter-produto">
             <option value="">Todos os produtos</option>
           </select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;">De
+            <input type="date" id="s-filter-date-from">
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;">Até
+            <input type="date" id="s-filter-date-to">
+          </label>
           <button type="button" class="btn btn--small btn--outline-light" id="s-filter-clear">Limpar filtros</button>
         </div>
         <div class="admin-list" id="s-list"><p class="admin-empty">Carregando…</p></div>
@@ -209,7 +215,7 @@
       <div class="admin-card">
         <h2>Vídeos enviados</h2>
         <p class="section__microcopy" style="margin-bottom:16px;">Todo vídeo bruto enviado pra virar anúncio impulsionado.</p>
-        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
           <select id="vi-filter-produto">
             <option value="">Todos os produtos</option>
           </select>
@@ -218,6 +224,12 @@
             <option value="selecionado">Selecionado pra impulsionar</option>
             <option value="pendente">Pendente</option>
           </select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;">De
+            <input type="date" id="vi-filter-date-from">
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;">Até
+            <input type="date" id="vi-filter-date-to">
+          </label>
           <button type="button" class="btn btn--small btn--outline-light" id="vi-filter-clear">Limpar filtros</button>
         </div>
         <div class="admin-list" id="vi-list"><p class="admin-empty">Carregando…</p></div>

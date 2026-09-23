@@ -66,10 +66,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
+  document.getElementById("s-filter-date-from").addEventListener("change", () => {
+    SUBMISSOES_PAGE = 1;
+    renderSubmissoes();
+  });
+  document.getElementById("s-filter-date-to").addEventListener("change", () => {
+    SUBMISSOES_PAGE = 1;
+    renderSubmissoes();
+  });
   document.getElementById("s-filter-clear").addEventListener("click", () => {
     document.getElementById("s-filter-briefing").value = "";
     document.getElementById("s-filter-plataforma").value = "";
     document.getElementById("s-filter-produto").value = "";
+    document.getElementById("s-filter-date-from").value = "";
+    document.getElementById("s-filter-date-to").value = "";
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
   });
@@ -82,9 +92,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     VI_SUBMISSOES_PAGE = 1;
     renderVIList();
   });
+  document.getElementById("vi-filter-date-from")?.addEventListener("change", () => {
+    VI_SUBMISSOES_PAGE = 1;
+    renderVIList();
+  });
+  document.getElementById("vi-filter-date-to")?.addEventListener("change", () => {
+    VI_SUBMISSOES_PAGE = 1;
+    renderVIList();
+  });
   document.getElementById("vi-filter-clear")?.addEventListener("click", () => {
     document.getElementById("vi-filter-produto").value = "";
     document.getElementById("vi-filter-status").value = "";
+    document.getElementById("vi-filter-date-from").value = "";
+    document.getElementById("vi-filter-date-to").value = "";
     VI_SUBMISSOES_PAGE = 1;
     renderVIList();
   });
@@ -245,6 +265,26 @@ function formatDateTime(value) {
   const data = d.toLocaleDateString("pt-BR");
   const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   return `${data} às ${hora}`;
+}
+
+// Filtro de calendário (De/Até) usado nas duas abas de Submissões.
+// `de`/`ate` vêm de <input type="date"> no formato "YYYY-MM-DD".
+// Compara por dia local, incluindo o dia inteiro selecionado em "até".
+function matchesDateRange(createdAt, de, ate) {
+  if (!de && !ate) return true;
+  if (!createdAt) return false;
+  const data = new Date(createdAt);
+  if (Number.isNaN(data.getTime())) return false;
+
+  if (de) {
+    const inicio = new Date(`${de}T00:00:00`);
+    if (data < inicio) return false;
+  }
+  if (ate) {
+    const fim = new Date(`${ate}T23:59:59.999`);
+    if (data > fim) return false;
+  }
+  return true;
 }
 
 /* ---------- BRIEFINGS ---------- */
@@ -537,6 +577,8 @@ function renderSubmissoes() {
   const filtroBriefing = document.getElementById("s-filter-briefing")?.value || "";
   const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
   const filtroProduto = document.getElementById("s-filter-produto")?.value || "";
+  const filtroDataDe = document.getElementById("s-filter-date-from")?.value || "";
+  const filtroDataAte = document.getElementById("s-filter-date-to")?.value || "";
 
   const base = hubSubmissoes();
   const data = base.filter((s) => {
@@ -546,6 +588,7 @@ function renderSubmissoes() {
     const produtoNome = s.produto_nome || s.categoria_produto || "";
     if (filtroProduto === "__sem_produto__" && produtoNome) return false;
     if (filtroProduto && filtroProduto !== "__sem_produto__" && produtoNome !== filtroProduto) return false;
+    if (!matchesDateRange(s.created_at, filtroDataDe, filtroDataAte)) return false;
     return true;
   });
 
@@ -860,6 +903,8 @@ function renderVIList() {
   if (!list) return;
   const filtroProduto = document.getElementById("vi-filter-produto")?.value || "";
   const filtroStatus = document.getElementById("vi-filter-status")?.value || "";
+  const filtroDataDe = document.getElementById("vi-filter-date-from")?.value || "";
+  const filtroDataAte = document.getElementById("vi-filter-date-to")?.value || "";
 
   const base = viSubmissoes();
   const data = base.filter((s) => {
@@ -868,6 +913,7 @@ function renderVIList() {
     if (filtroProduto && filtroProduto !== "__sem_produto__" && produtoNome !== filtroProduto) return false;
     if (filtroStatus === "selecionado" && !s.approved) return false;
     if (filtroStatus === "pendente" && s.approved) return false;
+    if (!matchesDateRange(s.created_at, filtroDataDe, filtroDataAte)) return false;
     return true;
   });
 
