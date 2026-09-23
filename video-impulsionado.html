@@ -38,7 +38,7 @@
   <section class="section" id="formulario" aria-labelledby="form-title">
     <div class="section__inner">
       <h2 id="form-title" class="section__title">Envie seu vídeo</h2>
-      <p class="section__text" id="formulario-intro">Preencha os dados abaixo e cole o link do vídeo (arquivo original, sem precisar estar postado).</p>
+      <p class="section__text" id="formulario-intro">Preencha os dados abaixo e envie o arquivo original do vídeo (sem precisar estar postado).</p>
 
       <div id="formulario-wrap">
       <form class="form-card" id="creator-form" novalidate>
@@ -63,10 +63,15 @@
           <span class="field__error" data-error-for="categoria_produto"></span>
         </div>
 
-        <div class="field" id="bloco-link">
-          <label for="link">Link do vídeo (Google Drive ou similar) *</label>
-          <input type="url" id="link" name="link" placeholder="Link da pasta ou arquivo com o vídeo" required>
-          <span class="field__error" data-error-for="link"></span>
+        <div class="field" id="bloco-arquivo">
+          <label for="arquivo">Arquivo do vídeo *</label>
+          <input type="file" id="arquivo" name="arquivo" accept="video/*" required>
+          <span class="field__error" data-error-for="arquivo"></span>
+        </div>
+
+        <div class="upload-progress" id="upload-progress" hidden>
+          <div class="upload-progress__bar"><div class="upload-progress__fill" id="upload-progress-fill"></div></div>
+          <span class="upload-progress__label" id="upload-progress-label">Enviando... 0%</span>
         </div>
 
         <button type="submit" class="btn btn--dark btn--full" id="submit-btn">Enviar meu vídeo</button>
@@ -97,8 +102,8 @@
           <p>Enquanto o seu vídeo estiver rodando como anúncio impulsionado, você recebe 5% de comissão sobre as vendas geradas pelo seu cupom nesse período.</p>
         </details>
         <details class="accordion__item">
-          <summary>Que tipo de link posso enviar?</summary>
-          <p>O ideal é um link do Google Drive (arquivo ou pasta). Se preferir usar outro serviço de armazenamento, mande também — só garanta que o acesso está liberado pra visualização.</p>
+          <summary>Como envio o arquivo do vídeo?</summary>
+          <p>Direto aqui na página: escolha o arquivo original (sem compressão de rede social) e clique em enviar. Ele vai automaticamente pra pasta da AURA no Drive — você não precisa subir em nenhum outro lugar nem gerar link.</p>
         </details>
         <details class="accordion__item">
           <summary>Quando eu recebo retorno sobre meu envio?</summary>
@@ -113,7 +118,7 @@
     <div class="section__inner">
       <img class="hero-mandala-small" src="assets/mandala-mini-1.svg" alt="" aria-hidden="true">
       <h2 id="cta-final-title" class="section__title section__title--light">Seu vídeo pode estar rodando como anúncio.</h2>
-      <p class="section__text section__text--light">Grave, envie o link e deixe o resto com a gente — leva menos de 2 minutos.</p>
+      <p class="section__text section__text--light">Grave, envie o arquivo e deixe o resto com a gente — leva menos de 2 minutos.</p>
       <a class="btn btn--primary btn--full" href="#formulario">Enviar meu vídeo</a>
     </div>
   </section>
