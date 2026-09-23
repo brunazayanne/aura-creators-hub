@@ -21,8 +21,10 @@ const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
+const DRIVE_UPLOAD_INIT_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-video-impulsionado`;
 
 const CONTENT_PLATFORM_TAG = "video_impulsionado_drive";
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB — limite confortável pra vídeo bruto de creator
 
 let CATEGORIAS = [];
 
@@ -90,6 +92,9 @@ function setupForm() {
   const form = document.getElementById("creator-form");
   const feedback = document.getElementById("form-feedback");
   const submitBtn = document.getElementById("submit-btn");
+  const progressWrap = document.getElementById("upload-progress");
+  const progressFill = document.getElementById("upload-progress-fill");
+  const progressLabel = document.getElementById("upload-progress-label");
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -108,10 +113,18 @@ function setupForm() {
     }
 
     setLoading(submitBtn, true);
+    progressWrap.hidden = false;
+    updateProgress(progressFill, progressLabel, 0);
 
     try {
-      await submitToBackend(data);
+      const categoriaNome = CATEGORIAS.find((c) => c.id === data.categoria_produto)?.nome || "Outros";
+      const driveFile = await uploadVideoToDrive(data.arquivo, categoriaNome, (percent) => {
+        updateProgress(progressFill, progressLabel, percent);
+      });
+
+      await submitToBackend({ ...data, contentUrl: driveFile.url });
       form.reset();
+      progressWrap.hidden = true;
 
       const total = await countSubmissionsByCupom(data.codigo);
       feedback.textContent = total
@@ -119,8 +132,10 @@ function setupForm() {
         : "Recebemos seu vídeo. Nosso time confere o material e avisa você se ele for selecionado pra impulsionar.";
       feedback.dataset.state = "success";
     } catch (err) {
-      feedback.textContent = "Algo não saiu como esperado. Tenta enviar de novo em alguns instantes.";
+      console.error(err);
+      feedback.textContent = "Algo não saiu como esperado no envio do vídeo. Tenta de novo em alguns instantes.";
       feedback.dataset.state = "error";
+      progressWrap.hidden = true;
     } finally {
       setLoading(submitBtn, false);
     }
@@ -132,7 +147,7 @@ function getFormData(form) {
     nome: form.nome.value.trim(),
     codigo: form.codigo.value.trim(),
     categoria_produto: form.categoria_produto.value,
-    link: form.link.value.trim(),
+    arquivo: form.arquivo.files[0] || null,
   };
 }
 
@@ -142,26 +157,85 @@ function validate(data) {
 
   if (!data.nome) errors.nome = REQUIRED_MSG;
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
-
   if (!data.categoria_produto) errors.categoria_produto = "Selecione o produto.";
 
-  if (!data.link) {
-    errors.link = REQUIRED_MSG;
-  } else if (!isValidFileLink(data.link)) {
-    errors.link = "Não conseguimos reconhecer esse link. Confira se copiou o endereço completo.";
+  if (!data.arquivo) {
+    errors.arquivo = REQUIRED_MSG;
+  } else if (!data.arquivo.type.startsWith("video/")) {
+    errors.arquivo = "Esse arquivo não parece ser um vídeo. Confira o formato e tenta de novo.";
+  } else if (data.arquivo.size > MAX_FILE_SIZE_BYTES) {
+    errors.arquivo = "Esse arquivo passou do limite de 2GB. Fala com a gente pelo WhatsApp pra enviar de outro jeito.";
   }
 
   return errors;
 }
 
-function isValidFileLink(url) {
-  try {
-    // eslint-disable-next-line no-new
-    new URL(url);
-    return true;
-  } catch {
-    return false;
+function updateProgress(fillEl, labelEl, percent) {
+  const rounded = Math.round(percent);
+  fillEl.style.width = `${rounded}%`;
+  labelEl.textContent = `Enviando... ${rounded}%`;
+}
+
+/* ---------- UPLOAD DIRETO PRO DRIVE (via Edge Function + sessão resumível) ---------- */
+
+async function uploadVideoToDrive(file, categoriaNome, onProgress) {
+  const initResponse = await fetch(DRIVE_UPLOAD_INIT_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      categoria: categoriaNome,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type || "video/mp4",
+    }),
+  });
+
+  if (!initResponse.ok) {
+    throw new Error(`Não foi possível preparar o upload (status ${initResponse.status}).`);
   }
+
+  const { uploadUrl, error } = await initResponse.json();
+  if (error || !uploadUrl) {
+    throw new Error(error || "O servidor não retornou uma URL de upload.");
+  }
+
+  return await putFileWithProgress(uploadUrl, file, onProgress);
+}
+
+function putFileWithProgress(uploadUrl, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl, true);
+    xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+
+    xhr.upload.addEventListener("progress", (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress((event.loaded / event.total) * 100);
+      }
+    });
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress && onProgress(100);
+        try {
+          const data = JSON.parse(xhr.responseText);
+          const url = data.webViewLink || (data.id ? `https://drive.google.com/file/d/${data.id}/view` : null);
+          resolve({ id: data.id, url });
+        } catch {
+          reject(new Error("Não conseguimos confirmar o upload no Drive."));
+        }
+      } else {
+        reject(new Error(`Falha no upload pro Drive (status ${xhr.status}).`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Falha de rede durante o upload."));
+    xhr.send(file);
+  });
 }
 
 function showErrors(errors) {
@@ -205,7 +279,7 @@ function buildPayload(data) {
     coupon_code: data.codigo,
     instagram_handle: "",
     content_platform: CONTENT_PLATFORM_TAG,
-    content_url: data.link,
+    content_url: data.contentUrl,
     consent_public_display: false,
     boost_authorized: true,
     boost_adcode: null,
