@@ -37,79 +37,52 @@
     <div class="admin-groups" role="tablist">
       <button type="button" class="admin-group" data-group="hub" aria-selected="true">Hub de Conteúdos</button>
       <button type="button" class="admin-group" data-group="video-impulsionado" aria-selected="false">Vídeo Impulsionado</button>
+      <button type="button" class="admin-group" data-group="chamados" aria-selected="false">Chamados de seeding</button>
     </div>
 
     <!-- GRUPO: HUB DE CONTEÚDOS -->
     <div class="admin-group-content" data-group-content="hub">
     <div class="admin-tabs" role="tablist">
-      <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
-      <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
+      <button type="button" class="admin-tab" data-tab="relatorio" aria-selected="true">Relatório</button>
       <button type="button" class="admin-tab" data-tab="submissoes" aria-selected="false">Submissões</button>
-      <button type="button" class="admin-tab" data-tab="chamados" aria-selected="false">Chamados de seeding</button>
-      <button type="button" class="admin-tab" data-tab="relatorio" aria-selected="false">Relatório</button>
+      <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
     </div>
 
-    <!-- BRIEFINGS -->
-    <section class="admin-panel" data-panel="briefings" data-active="true">
+    <!-- RELATÓRIO -->
+    <section class="admin-panel" data-panel="relatorio" data-active="true">
       <div class="admin-card">
-        <h2 id="b-form-title">Novo briefing</h2>
-        <div class="admin-form-row">
-          <div class="field"><label>Título *</label><input type="text" id="b-titulo" placeholder="Ex: Musas de AURA"></div>
-          <div class="field">
-            <label>Plataforma</label>
-            <div class="radio-group" id="b-plataforma-group">
-              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="Reels"> Reels</label>
-              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="TikTok"> TikTok</label>
-              <label class="radio-option"><input type="checkbox" name="b-plataforma" value="Story"> Story</label>
-            </div>
-          </div>
+        <h2>Visão geral</h2>
+        <div class="admin-kpis" id="r-kpis"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-report-grid">
+        <div class="admin-card">
+          <h2>Submissões por plataforma</h2>
+          <div class="admin-list" id="r-plataforma"><p class="admin-empty">Carregando…</p></div>
         </div>
-        <div class="admin-form-row">
-          <div class="field"><label>Prazo</label><input type="date" id="b-prazo"></div>
-          <div class="field"><label>Ordem de exibição</label><input type="number" id="b-ordem" value="0"></div>
+        <div class="admin-card">
+          <h2>Submissões por produto</h2>
+          <p class="section__microcopy" style="margin-bottom:16px;">Quais produtos estão gerando mais conteúdo.</p>
+          <div class="admin-list" id="r-produto"><p class="admin-empty">Carregando…</p></div>
         </div>
-        <div class="admin-form-row admin-form-row--full">
-          <div class="field"><label>Descrição (aparece no modal)</label><textarea id="b-descricao" rows="3" style="font-family:var(--font);font-size:14px;padding:12px 14px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);"></textarea></div>
-        </div>
-        <div class="admin-form-row admin-form-row--full">
-          <div class="field"><label>Destaques (um por linha)</label><textarea id="b-destaques" rows="3" style="font-family:var(--font);font-size:14px;padding:12px 14px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);"></textarea></div>
-        </div>
-        <div class="admin-form-row admin-form-row--full">
-          <div class="field"><label>PDF do briefing (opcional)</label><input type="file" id="b-pdf" accept="application/pdf"></div>
-          <p class="admin-empty" id="b-pdf-atual" style="display:none;margin-top:6px;"></p>
-        </div>
-        <div class="admin-form-row--inline" style="display:flex;gap:10px;">
-          <button type="button" class="btn btn--primary" id="b-add">Adicionar briefing</button>
-          <button type="button" class="btn btn--small btn--outline-light" id="b-cancel-edit" style="display:none;">Cancelar edição</button>
-        </div>
-        <p class="admin-feedback" id="b-feedback"></p>
       </div>
       <div class="admin-card">
-        <h2>Briefings vigentes</h2>
-        <div class="admin-list" id="b-list"><p class="admin-empty">Carregando…</p></div>
+        <h2>Ranking de creators</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Quem mais enviou conteúdo (por cupom).</p>
+        <div class="admin-list" id="r-ranking"><p class="admin-empty">Carregando…</p></div>
       </div>
       <div class="admin-card">
-        <details id="b-arquivo-details">
-          <summary style="cursor:pointer;font-weight:600;">Briefings anteriores <span id="b-arquivo-count" style="font-weight:400;opacity:.7;"></span></summary>
-          <div class="admin-list" id="b-list-arquivo" style="margin-top:14px;"><p class="admin-empty">Carregando…</p></div>
-        </details>
-      </div>
-    </section>
-
-    <!-- CATEGORIAS -->
-    <section class="admin-panel" data-panel="categorias">
-      <div class="admin-card">
-        <h2>Nova categoria</h2>
-        <div class="admin-form-row">
-          <div class="field"><label>Nome *</label><input type="text" id="c-nome" placeholder="Ex: Body Splash"></div>
-          <div class="field"><label>Ordem de exibição</label><input type="number" id="c-ordem" value="0"></div>
+        <h2>Cruzamento com vendas</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Suba o CSV de vendas (colunas: coupons, date_sale, order_value) pra cruzar com as postagens por cupom e ver a relação dia a dia, com hoje em destaque.</p>
+        <div class="admin-form-row--inline" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="v-csv-input" accept=".csv,text/csv">
+          <button type="button" class="btn btn--small btn--primary" id="v-csv-process">Processar CSV</button>
         </div>
-        <button type="button" class="btn btn--primary" id="c-add">Adicionar categoria</button>
-        <p class="admin-feedback" id="c-feedback"></p>
-      </div>
-      <div class="admin-card">
-        <h2>Categorias cadastradas</h2>
-        <div class="admin-list" id="c-list"><p class="admin-empty">Carregando…</p></div>
+        <p class="admin-feedback" id="v-csv-feedback"></p>
+        <div class="admin-kpis" id="v-kpis" style="display:none;margin-top:16px;"></div>
+        <div style="margin-top:20px;max-width:100%;">
+          <canvas id="v-chart" height="280" style="display:none;"></canvas>
+        </div>
+        <div class="admin-list" id="v-sem-match" style="margin-top:16px;"></div>
       </div>
     </section>
 
@@ -147,59 +120,25 @@
       </div>
     </section>
 
-    <!-- CHAMADOS DE SEEDING -->
-    <section class="admin-panel" data-panel="chamados">
+    <!-- CATEGORIAS -->
+    <section class="admin-panel" data-panel="categorias">
       <div class="admin-card">
-        <h2>Chamados de seeding</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Problemas reportados pelas creators no formulário de ajuda com seeding. Escreva a resposta aqui e marque como respondido.</p>
-        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-          <select id="ch-filter-status">
-            <option value="">Todos os status</option>
-            <option value="aberto">Em aberto</option>
-            <option value="respondido">Respondidos</option>
-          </select>
+        <h2>Nova categoria</h2>
+        <div class="admin-form-row">
+          <div class="field"><label>Nome *</label><input type="text" id="c-nome" placeholder="Ex: Body Splash"></div>
+          <div class="field"><label>Ordem de exibição</label><input type="number" id="c-ordem" value="0"></div>
         </div>
-        <div class="admin-list" id="ch-list"><p class="admin-empty">Carregando…</p></div>
+        <button type="button" class="btn btn--primary" id="c-add">Adicionar categoria</button>
+        <p class="admin-feedback" id="c-feedback"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Categorias cadastradas</h2>
+        <div class="admin-list" id="c-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
+    </div>
 
-    <!-- RELATÓRIO -->
-    <section class="admin-panel" data-panel="relatorio">
-      <div class="admin-card">
-        <h2>Visão geral</h2>
-        <div class="admin-kpis" id="r-kpis"><p class="admin-empty">Carregando…</p></div>
-      </div>
-      <div class="admin-report-grid">
-        <div class="admin-card">
-          <h2>Submissões por plataforma</h2>
-          <div class="admin-list" id="r-plataforma"><p class="admin-empty">Carregando…</p></div>
-        </div>
-        <div class="admin-card">
-          <h2>Submissões por produto</h2>
-          <p class="section__microcopy" style="margin-bottom:16px;">Quais produtos estão gerando mais conteúdo.</p>
-          <div class="admin-list" id="r-produto"><p class="admin-empty">Carregando…</p></div>
-        </div>
-      </div>
-      <div class="admin-card">
-        <h2>Ranking de creators</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Quem mais enviou conteúdo (por cupom).</p>
-        <div class="admin-list" id="r-ranking"><p class="admin-empty">Carregando…</p></div>
-      </div>
-      <div class="admin-card">
-        <h2>Cruzamento com vendas</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Suba o CSV de vendas (colunas: coupons, date_sale, order_value) pra cruzar com as postagens por cupom e ver a relação dia a dia, com hoje em destaque.</p>
-        <div class="admin-form-row--inline" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <input type="file" id="v-csv-input" accept=".csv,text/csv">
-          <button type="button" class="btn btn--small btn--primary" id="v-csv-process">Processar CSV</button>
-        </div>
-        <p class="admin-feedback" id="v-csv-feedback"></p>
-        <div class="admin-kpis" id="v-kpis" style="display:none;margin-top:16px;"></div>
-        <div style="margin-top:20px;max-width:100%;">
-          <canvas id="v-chart" height="280" style="display:none;"></canvas>
-        </div>
-        <div class="admin-list" id="v-sem-match" style="margin-top:16px;"></div>
-      </div>
-    </section>
+    <!-- GRUPO: VÍDEO IMPULSIONADO -->
     </div>
 
     <!-- GRUPO: VÍDEO IMPULSIONADO -->
@@ -245,6 +184,24 @@
           <button type="button" class="btn btn--small btn--outline-light" id="vi-filter-clear">Limpar filtros</button>
         </div>
         <div class="admin-list" id="vi-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+    </div>
+
+    <!-- GRUPO: CHAMADOS DE SEEDING -->
+    <div class="admin-group-content" data-group-content="chamados" hidden>
+    <section class="admin-panel" data-active="true">
+      <div class="admin-card">
+        <h2>Chamados de seeding</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Problemas reportados pelas creators no formulário de ajuda com seeding. Escreva a resposta aqui e marque como respondido.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <select id="ch-filter-status">
+            <option value="">Todos os status</option>
+            <option value="aberto">Em aberto</option>
+            <option value="respondido">Respondidos</option>
+          </select>
+        </div>
+        <div class="admin-list" id="ch-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
     </div>
