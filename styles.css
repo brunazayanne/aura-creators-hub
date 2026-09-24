@@ -634,6 +634,17 @@ summary:focus-visible {
 .admin-tab[aria-selected="true"] { background: var(--gold); color: var(--white); border-color: var(--gold); }
 .admin-panel { display: none; }
 .admin-panel[data-active="true"] { display: block; }
+[data-group-content="chamados"] .admin-panel { margin-top: 20px; }
+.admin-filter-row select,
+.admin-filter-row input[type="date"] {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 10px 12px;
+  border: 1px solid var(--placeholder-gray);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--brown);
+}
 .admin-card {
   background: var(--white);
   border-radius: var(--radius);
