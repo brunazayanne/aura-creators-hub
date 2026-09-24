@@ -16,7 +16,6 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let CATEGORIAS = [];
 let BRIEFINGS = [];
-let editingBriefingId = null;
 let ALL_SUBMISSOES = [];
 let ALL_CHAMADOS = [];
 let SUBMISSOES_PAGE = 1;
@@ -51,8 +50,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     group.addEventListener("click", () => switchGroup(group.dataset.group));
   });
 
-  document.getElementById("b-add").addEventListener("click", saveBriefing);
-  document.getElementById("b-cancel-edit").addEventListener("click", cancelEditBriefing);
   document.getElementById("c-add").addEventListener("click", addCategoria);
 
   document.getElementById("s-filter-briefing").addEventListener("change", () => {
@@ -233,7 +230,6 @@ function showLogin() {
 async function showApp() {
   document.getElementById("login-box").hidden = true;
   document.getElementById("admin-app").hidden = false;
-  loadBriefings();
   loadCategorias();
   await loadSubmissoes();
   loadChamados();
@@ -289,190 +285,6 @@ function matchesDateRange(createdAt, de, ate) {
     if (data > fim) return false;
   }
   return true;
-}
-
-/* ---------- BRIEFINGS ---------- */
-
-function briefingRowHtml(b) {
-  return `
-      <div class="admin-row${b.ativo ? "" : " admin-row--inativo"}">
-        <span>${escapeHtml(b.titulo)}${b.prazo ? ` — até ${escapeHtml(b.prazo)}` : ""}</span>
-        <div class="admin-row__actions">
-          <button data-action="edit" data-id="${b.id}">Editar</button>
-          <button data-action="toggle" data-id="${b.id}" data-ativo="${b.ativo}">${b.ativo ? "Desativar" : "Ativar"}</button>
-          <button class="danger" data-action="delete" data-id="${b.id}">Excluir</button>
-        </div>
-      </div>
-    `;
-}
-
-function wireBriefingRowActions(container) {
-  container.querySelectorAll('[data-action="edit"]').forEach((btn) =>
-    btn.addEventListener("click", () => startEditBriefing(btn.dataset.id))
-  );
-  container.querySelectorAll('[data-action="toggle"]').forEach((btn) =>
-    btn.addEventListener("click", () => toggleBriefing(btn.dataset.id, btn.dataset.ativo === "true"))
-  );
-  container.querySelectorAll('[data-action="delete"]').forEach((btn) =>
-    btn.addEventListener("click", () => deleteBriefing(btn.dataset.id))
-  );
-}
-
-async function loadBriefings() {
-  const list = document.getElementById("b-list");
-  const listArquivo = document.getElementById("b-list-arquivo");
-  const arquivoCount = document.getElementById("b-arquivo-count");
-
-  const { data, error } = await client
-    .from("aura_hub_briefings")
-    .select("*")
-    .order("ordem", { ascending: true });
-
-  if (error) {
-    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
-    return;
-  }
-  BRIEFINGS = data || [];
-  populateSubmissaoBriefingFilter();
-  if (ALL_SUBMISSOES.length) renderSubmissoes();
-
-  if (!data || data.length === 0) {
-    list.innerHTML = '<p class="admin-empty">Nenhum briefing cadastrado ainda.</p>';
-    if (listArquivo) listArquivo.innerHTML = '<p class="admin-empty">Nenhum briefing anterior.</p>';
-    if (arquivoCount) arquivoCount.textContent = "(0)";
-    return;
-  }
-
-  const vigentes = data.filter((b) => !isPast(b.prazo));
-  const encerrados = data.filter((b) => isPast(b.prazo));
-
-  list.innerHTML = vigentes.length
-    ? vigentes.map(briefingRowHtml).join("")
-    : '<p class="admin-empty">Nenhum briefing vigente no momento.</p>';
-  wireBriefingRowActions(list);
-
-  if (listArquivo) {
-    listArquivo.innerHTML = encerrados.length
-      ? encerrados.map(briefingRowHtml).join("")
-      : '<p class="admin-empty">Nenhum briefing anterior.</p>';
-    wireBriefingRowActions(listArquivo);
-  }
-  if (arquivoCount) arquivoCount.textContent = `(${encerrados.length})`;
-}
-
-function startEditBriefing(id) {
-  const briefing = BRIEFINGS.find((b) => b.id === id);
-  if (!briefing) return;
-
-  editingBriefingId = id;
-
-  document.getElementById("b-titulo").value = briefing.titulo || "";
-  const plataformas = (briefing.plataforma || "").split(",").map((s) => s.trim()).filter(Boolean);
-  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => {
-    el.checked = plataformas.includes(el.value);
-  });
-  document.getElementById("b-prazo").value = briefing.prazo || "";
-  document.getElementById("b-ordem").value = briefing.ordem || 0;
-  document.getElementById("b-descricao").value = briefing.descricao || "";
-  document.getElementById("b-destaques").value = (briefing.destaques || []).join("\n");
-  document.getElementById("b-pdf").value = "";
-
-  const pdfAtualEl = document.getElementById("b-pdf-atual");
-  if (briefing.pdf_url) {
-    pdfAtualEl.style.display = "block";
-    pdfAtualEl.innerHTML = `PDF atual: <a href="${encodeURI(briefing.pdf_url)}" target="_blank" rel="noopener">ver arquivo</a>. Envie um novo aqui só se quiser substituir.`;
-  } else {
-    pdfAtualEl.style.display = "none";
-    pdfAtualEl.innerHTML = "";
-  }
-
-  document.getElementById("b-form-title").textContent = "Editar briefing";
-  document.getElementById("b-add").textContent = "Salvar alterações";
-  document.getElementById("b-cancel-edit").style.display = "inline-block";
-  document.getElementById("b-titulo").closest(".admin-card").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function cancelEditBriefing() {
-  editingBriefingId = null;
-  document.getElementById("b-titulo").value = "";
-  document.querySelectorAll('input[name="b-plataforma"]').forEach((el) => (el.checked = false));
-  document.getElementById("b-prazo").value = "";
-  document.getElementById("b-ordem").value = 0;
-  document.getElementById("b-descricao").value = "";
-  document.getElementById("b-destaques").value = "";
-  document.getElementById("b-pdf").value = "";
-  document.getElementById("b-pdf-atual").style.display = "none";
-  document.getElementById("b-pdf-atual").innerHTML = "";
-  document.getElementById("b-form-title").textContent = "Novo briefing";
-  document.getElementById("b-add").textContent = "Adicionar briefing";
-  document.getElementById("b-cancel-edit").style.display = "none";
-}
-
-async function saveBriefing() {
-  const titulo = document.getElementById("b-titulo").value.trim();
-  const plataforma = Array.from(document.querySelectorAll('input[name="b-plataforma"]:checked'))
-    .map((el) => el.value)
-    .join(", ");
-  const prazo = document.getElementById("b-prazo").value || null;
-  const ordem = Number(document.getElementById("b-ordem").value) || 0;
-  const descricao = document.getElementById("b-descricao").value.trim();
-  const destaques = document
-    .getElementById("b-destaques")
-    .value.split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const pdfInput = document.getElementById("b-pdf");
-  const pdfFile = pdfInput.files[0];
-
-  if (!titulo) {
-    feedbackEl("b-feedback", "Título é obrigatório.", "error");
-    return;
-  }
-
-  const isEditing = Boolean(editingBriefingId);
-  const existing = isEditing ? BRIEFINGS.find((b) => b.id === editingBriefingId) : null;
-  let pdf_url = existing ? existing.pdf_url || null : null;
-
-  if (pdfFile) {
-    feedbackEl("b-feedback", "Enviando PDF…", "success");
-    const path = `${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
-    const { error: uploadError } = await client.storage.from("briefings-pdf").upload(path, pdfFile, {
-      contentType: "application/pdf",
-      upsert: false,
-    });
-    if (uploadError) {
-      feedbackEl("b-feedback", `Erro ao enviar o PDF: ${uploadError.message}`, "error");
-      return;
-    }
-    const { data: publicUrlData } = client.storage.from("briefings-pdf").getPublicUrl(path);
-    pdf_url = publicUrlData.publicUrl;
-  }
-
-  const payload = { titulo, plataforma: plataforma || null, prazo, ordem, descricao: descricao || null, destaques, pdf_url };
-
-  const { error } = isEditing
-    ? await client.from("aura_hub_briefings").update(payload).eq("id", editingBriefingId)
-    : await client.from("aura_hub_briefings").insert(payload);
-
-  if (error) {
-    feedbackEl("b-feedback", `Erro: ${error.message}`, "error");
-    return;
-  }
-
-  feedbackEl("b-feedback", isEditing ? "Briefing atualizado." : "Briefing adicionado.", "success");
-  cancelEditBriefing();
-  loadBriefings();
-}
-
-async function toggleBriefing(id, ativoAtual) {
-  await client.from("aura_hub_briefings").update({ ativo: !ativoAtual }).eq("id", id);
-  loadBriefings();
-}
-
-async function deleteBriefing(id) {
-  if (!confirm("Excluir esse briefing?")) return;
-  await client.from("aura_hub_briefings").delete().eq("id", id);
-  loadBriefings();
 }
 
 /* ---------- CATEGORIAS (lista única, sem produtos aninhados) ----------

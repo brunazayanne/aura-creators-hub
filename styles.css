@@ -885,7 +885,7 @@ summary:focus-visible {
 
   .arquivo__item { padding: 18px 22px; }
 
-  .form-card { max-width: 560px; padding: 32px; }
+  .form-card { max-width: 560px; padding: 32px; margin: 0 auto; }
 
   .footer__inner { flex-direction: row; justify-content: space-between; align-items: center; }
 }
