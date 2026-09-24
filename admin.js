@@ -556,7 +556,10 @@ async function loadChamados() {
 
 function renderChamados() {
   const list = document.getElementById("ch-list");
+  const kpisEl = document.getElementById("ch-kpis");
   const filtroStatus = document.getElementById("ch-filter-status")?.value || "";
+
+  if (kpisEl) renderChamadosKpis(kpisEl, ALL_CHAMADOS);
 
   if (ALL_CHAMADOS.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum chamado recebido ainda.</p>';
@@ -571,6 +574,18 @@ function renderChamados() {
 
   list.innerHTML = data.map(chamadoRowHtml).join("");
   wireChamadoRowActions(list);
+}
+
+function renderChamadosKpis(el, chamados) {
+  const total = chamados.length;
+  const abertos = chamados.filter((c) => c.status !== "respondido").length;
+  const respondidos = chamados.filter((c) => c.status === "respondido").length;
+
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${total}</span><span class="admin-kpi__label">Chamados recebidos</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${abertos}</span><span class="admin-kpi__label">Em aberto</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${respondidos}</span><span class="admin-kpi__label">Respondidos</span></div>
+  `;
 }
 
 function chamadoRowHtml(c) {
