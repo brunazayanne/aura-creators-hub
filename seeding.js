@@ -4,14 +4,20 @@
    e-mail e mensagem. Grava em aura_hub_seeding_chamados
    (Supabase). Resposta é dada pelo time no admin.
 
-   Envio de e-mail (cópia pra creator + resposta do time)
-   ainda NÃO está conectado aqui — ver pendência técnica
-   documentada pro dev. Este script só grava o chamado.
+   E-mail de confirmação: chamamos a Edge Function
+   send-chamado-email diretamente daqui, logo após o insert
+   dar certo. O ideal seria isso disparar por um Database
+   Webhook (INSERT na tabela), mas o projeto Supabase está
+   sem o schema "supabase_functions" provisionado (bug de
+   infra da própria Supabase) — enquanto isso não é resolvido
+   por eles, chamamos a função direto do cliente com o mesmo
+   formato de payload que um webhook enviaria.
    ============================================ */
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const CHAMADOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_seeding_chamados`;
+const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
 
 document.addEventListener("DOMContentLoaded", () => {
   setupForm();
@@ -153,5 +159,33 @@ async function submitChamado(data) {
     throw new Error(`Endpoint respondeu com status ${response.status}`);
   }
 
+  // Chamado gravado com sucesso — dispara o e-mail de confirmação.
+  // Falha aqui não deve impedir o "chamado recebido" pra creator,
+  // já que o registro em si já foi salvo.
+  notifyChamadoEmail({
+    type: "INSERT",
+    table: "aura_hub_seeding_chamados",
+    record: payload,
+    old_record: null,
+  });
+
   return response;
+}
+
+async function notifyChamadoEmail(body) {
+  try {
+    const res = await fetch(CHAMADO_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("send-chamado-email respondeu com erro:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Falha ao chamar send-chamado-email:", err);
+  }
 }

@@ -11,6 +11,10 @@
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
+// E-mail de resposta do chamado de seeding: chamamos a Edge Function
+// send-chamado-email direto daqui (mesmo motivo documentado em seeding.js —
+// Database Webhook não pôde ser configurado por bug de infra da Supabase).
+const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -641,6 +645,9 @@ async function saveChamadoResposta(id, resposta, btn) {
   btn.disabled = true;
   btn.textContent = "Salvando…";
 
+  const chamadoAnterior = ALL_CHAMADOS.find((c) => c.id === id);
+  const statusAnterior = chamadoAnterior?.status || "aberto";
+
   const { error } = await client
     .from("aura_hub_seeding_chamados")
     .update({ status: "respondido", resposta, responded_at: new Date().toISOString() })
@@ -653,7 +660,36 @@ async function saveChamadoResposta(id, resposta, btn) {
     return;
   }
 
+  // Só dispara e-mail se realmente virou "respondido" agora (evita reenviar
+  // toda vez que alguém edita a resposta de um chamado já respondido).
+  if (statusAnterior !== "respondido") {
+    notifyChamadoEmail({
+      type: "UPDATE",
+      table: "aura_hub_seeding_chamados",
+      record: { ...chamadoAnterior, status: "respondido", resposta },
+      old_record: { ...chamadoAnterior, status: statusAnterior },
+    });
+  }
+
   loadChamados();
+}
+
+async function notifyChamadoEmail(body) {
+  try {
+    const res = await fetch(CHAMADO_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("send-chamado-email respondeu com erro:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Falha ao chamar send-chamado-email:", err);
+  }
 }
 
 /* ---------- RELATÓRIO ---------- */
