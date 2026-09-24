@@ -45,6 +45,7 @@
       <button type="button" class="admin-tab" data-tab="briefings" aria-selected="true">Briefings</button>
       <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
       <button type="button" class="admin-tab" data-tab="submissoes" aria-selected="false">Submissões</button>
+      <button type="button" class="admin-tab" data-tab="chamados" aria-selected="false">Chamados de seeding</button>
       <button type="button" class="admin-tab" data-tab="relatorio" aria-selected="false">Relatório</button>
     </div>
 
@@ -143,6 +144,22 @@
           <button type="button" class="btn btn--small btn--outline-light" id="s-filter-clear">Limpar filtros</button>
         </div>
         <div class="admin-list" id="s-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- CHAMADOS DE SEEDING -->
+    <section class="admin-panel" data-panel="chamados">
+      <div class="admin-card">
+        <h2>Chamados de seeding</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Problemas reportados pelas creators no formulário de ajuda com seeding. Escreva a resposta aqui e marque como respondido.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <select id="ch-filter-status">
+            <option value="">Todos os status</option>
+            <option value="aberto">Em aberto</option>
+            <option value="respondido">Respondidos</option>
+          </select>
+        </div>
+        <div class="admin-list" id="ch-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
 
