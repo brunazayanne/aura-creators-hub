@@ -59,6 +59,35 @@
         </div>
 
         <div class="field">
+          <label for="instagram">@ do Instagram *</label>
+          <input type="text" id="instagram" name="instagram" placeholder="@seuinstagram" autocomplete="off" required>
+          <span class="field__error" data-error-for="instagram"></span>
+        </div>
+
+        <fieldset class="field field--fieldset">
+          <legend>Em quais redes você ativa a AURA? *</legend>
+          <div class="checkbox-group">
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="instagram">
+              Instagram
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="tiktok_shop">
+              TikTok Shop
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="shopee">
+              Shopee
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="youtube">
+              YouTube
+            </label>
+          </div>
+          <span class="field__error" data-error-for="redes"></span>
+        </fieldset>
+
+        <div class="field">
           <label for="email">E-mail *</label>
           <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" autocomplete="email" required>
           <span class="field__error" data-error-for="email"></span>

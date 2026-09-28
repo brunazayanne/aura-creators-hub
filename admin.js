@@ -23,6 +23,13 @@ let VI_SUBMISSOES_PAGE = 1;
 const SUBMISSOES_POR_PAGINA = 10;
 const VIDEO_IMPULSIONADO_PLATFORM = "video_impulsionado_drive";
 
+const REDES_LABELS = {
+  instagram: "Instagram",
+  tiktok_shop: "TikTok Shop",
+  shopee: "Shopee",
+  youtube: "YouTube",
+};
+
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
   instagram_story: "Instagram (Story)",
@@ -579,6 +586,10 @@ function chamadoRowHtml(c) {
     : '<span class="admin-tag admin-tag--pending">Em aberto</span>';
   const recebidoEm = formatDateTime(c.created_at);
   const respondidoEm = formatDateTime(c.responded_at);
+  const handle = (c.instagram_handle || "").replace(/^@+/, "");
+  const redesTexto = Array.isArray(c.redes_ativas) && c.redes_ativas.length
+    ? c.redes_ativas.map((r) => REDES_LABELS[r] || r).join(", ")
+    : "";
 
   return `
     <div class="admin-row admin-row--submissao" data-id="${c.id}">
@@ -586,8 +597,10 @@ function chamadoRowHtml(c) {
         <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
         <p style="font-size:12px;opacity:.75;">
           ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
+          ${handle ? ` · @${escapeHtml(handle)}` : ""}
           ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
         </p>
+        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
         ${
           c.status === "respondido"
