@@ -39,8 +39,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (session) showApp();
   else showLogin();
 
+  // Quando alguém clica no link de "primeiro acesso/esqueci a senha" do
+  // e-mail, o Supabase dispara esse evento com uma sessão temporária —
+  // nesse caso mostramos a tela de definir nova senha em vez do login.
+  client.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") showResetPassword();
+  });
+
   document.getElementById("login-btn").addEventListener("click", handleLogin);
   document.getElementById("logout-btn").addEventListener("click", handleLogout);
+  document.getElementById("forgot-password-link").addEventListener("click", handleForgotPassword);
+  document.getElementById("reset-password-btn").addEventListener("click", handleResetPassword);
 
   document.querySelectorAll(".admin-tab").forEach((tab) => {
     tab.addEventListener("click", () => switchTab(tab.dataset.tab));
@@ -224,7 +233,74 @@ async function handleLogout() {
 
 function showLogin() {
   document.getElementById("login-box").hidden = false;
+  document.getElementById("reset-password-box").hidden = true;
   document.getElementById("admin-app").hidden = true;
+}
+
+function showResetPassword() {
+  document.getElementById("login-box").hidden = true;
+  document.getElementById("reset-password-box").hidden = false;
+  document.getElementById("admin-app").hidden = true;
+}
+
+/* Primeiro acesso e "esqueci a senha" usam o mesmo fluxo: a Supabase manda
+   um e-mail com link de redefinição pro endereço que a pessoa digitar no
+   campo de login (mesmo sem senha nenhuma cadastrada ainda). */
+async function handleForgotPassword(event) {
+  event.preventDefault();
+  const feedback = document.getElementById("login-feedback");
+  const email = document.getElementById("login-email").value.trim();
+
+  if (!email) {
+    feedback.textContent = "Digita seu e-mail no campo acima primeiro, aí clica de novo no link.";
+    feedback.dataset.state = "error";
+    document.getElementById("login-email").focus();
+    return;
+  }
+
+  feedback.textContent = "Enviando e-mail...";
+  feedback.removeAttribute("data-state");
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}`,
+  });
+
+  if (error) {
+    feedback.textContent = `Não conseguimos enviar o e-mail: ${error.message}`;
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  feedback.textContent = "Se esse e-mail estiver cadastrado, chega um link em instantes pra você definir a senha.";
+  feedback.dataset.state = "success";
+}
+
+async function handleResetPassword() {
+  const feedback = document.getElementById("reset-password-feedback");
+  const senha = document.getElementById("reset-password").value;
+  const confirmacao = document.getElementById("reset-password-confirm").value;
+
+  if (!senha || senha.length < 6) {
+    feedback.textContent = "A senha precisa ter pelo menos 6 caracteres.";
+    feedback.dataset.state = "error";
+    return;
+  }
+  if (senha !== confirmacao) {
+    feedback.textContent = "As senhas não são iguais.";
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({ password: senha });
+  if (error) {
+    feedback.textContent = `Não conseguimos salvar: ${error.message}`;
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  feedback.textContent = "Senha salva! Entrando...";
+  feedback.dataset.state = "success";
+  setTimeout(showApp, 800);
 }
 
 async function showApp() {
