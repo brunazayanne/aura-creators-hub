@@ -550,6 +550,10 @@ summary:focus-visible {
 .radio-option { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; }
 .radio-option input { width: 16px; height: 16px; }
 
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.checkbox-option { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; color: var(--brown); }
+.checkbox-option input { width: 16px; height: 16px; }
+
 .form-feedback { font-size: 14px; font-weight: 700; min-height: 20px; }
 .form-feedback[data-state="success"] { color: var(--sucesso); }
 .upload-progress { display: flex; flex-direction: column; gap: 6px; }

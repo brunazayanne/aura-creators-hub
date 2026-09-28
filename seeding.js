@@ -61,10 +61,16 @@ function setupForm() {
 }
 
 function getFormData(form) {
+  const redesSelecionadas = Array.from(form.querySelectorAll('input[name="redes"]:checked')).map(
+    (input) => input.value
+  );
+
   return {
     nome: form.nome.value.trim(),
     cpf: form.cpf.value.trim(),
     cupom: form.cupom.value.trim(),
+    instagram: form.instagram.value.trim(),
+    redes: redesSelecionadas,
     email: form.email.value.trim(),
     mensagem: form.mensagem.value.trim(),
   };
@@ -83,6 +89,12 @@ function validate(data) {
   }
 
   if (!data.cupom) errors.cupom = REQUIRED_MSG;
+
+  if (!data.instagram) errors.instagram = REQUIRED_MSG;
+
+  if (!data.redes || data.redes.length === 0) {
+    errors.redes = "Marca pelo menos uma rede.";
+  }
 
   if (!data.email) {
     errors.email = REQUIRED_MSG;
@@ -136,6 +148,8 @@ function buildPayload(data) {
     nome: data.nome,
     cpf: data.cpf.replace(/\D/g, ""),
     cupom: data.cupom,
+    instagram_handle: data.instagram.replace(/^@+/, ""),
+    redes_ativas: data.redes,
     email: data.email,
     mensagem: data.mensagem,
   };
