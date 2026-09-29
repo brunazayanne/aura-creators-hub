@@ -52,10 +52,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("c-add").addEventListener("click", addCategoria);
 
-  document.getElementById("s-filter-briefing").addEventListener("change", () => {
-    SUBMISSOES_PAGE = 1;
-    renderSubmissoes();
-  });
   document.getElementById("s-filter-plataforma").addEventListener("change", () => {
     SUBMISSOES_PAGE = 1;
     renderSubmissoes();
@@ -73,7 +69,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderSubmissoes();
   });
   document.getElementById("s-filter-clear").addEventListener("click", () => {
-    document.getElementById("s-filter-briefing").value = "";
     document.getElementById("s-filter-plataforma").value = "";
     document.getElementById("s-filter-produto").value = "";
     document.getElementById("s-filter-date-from").value = "";
@@ -111,20 +106,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   wireVendasUpload();
 });
-
-function populateSubmissaoBriefingFilter() {
-  const select = document.getElementById("s-filter-briefing");
-  if (!select) return;
-  const current = select.value;
-  select.innerHTML = '<option value="">Todos os briefings</option><option value="__sem_briefing__">Sem briefing</option>';
-  BRIEFINGS.forEach((b) => {
-    const el = document.createElement("option");
-    el.value = b.id;
-    el.textContent = b.titulo;
-    select.appendChild(el);
-  });
-  select.value = current;
-}
 
 function populateSubmissaoProdutoFilter() {
   const select = document.getElementById("s-filter-produto");
@@ -382,7 +363,6 @@ async function loadSubmissoes() {
   }
 
   ALL_SUBMISSOES = data || [];
-  populateSubmissaoBriefingFilter();
   populateSubmissaoProdutoFilter();
   renderSubmissoes();
   renderVISection();
@@ -390,7 +370,6 @@ async function loadSubmissoes() {
 
 function renderSubmissoes() {
   const list = document.getElementById("s-list");
-  const filtroBriefing = document.getElementById("s-filter-briefing")?.value || "";
   const filtroPlataforma = document.getElementById("s-filter-plataforma")?.value || "";
   const filtroProduto = document.getElementById("s-filter-produto")?.value || "";
   const filtroDataDe = document.getElementById("s-filter-date-from")?.value || "";
@@ -398,8 +377,6 @@ function renderSubmissoes() {
 
   const base = hubSubmissoes();
   const data = base.filter((s) => {
-    if (filtroBriefing === "__sem_briefing__" && s.briefing_id) return false;
-    if (filtroBriefing && filtroBriefing !== "__sem_briefing__" && s.briefing_id !== filtroBriefing) return false;
     if (filtroPlataforma && s.content_platform !== filtroPlataforma) return false;
     const produtoNome = s.produto_nome || s.categoria_produto || "";
     if (filtroProduto === "__sem_produto__" && produtoNome) return false;
