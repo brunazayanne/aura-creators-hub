@@ -11,6 +11,10 @@
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
+// E-mail de resposta do chamado de seeding: chamamos a Edge Function
+// send-chamado-email direto daqui (mesmo motivo documentado em seeding.js —
+// Database Webhook não pôde ser configurado por bug de infra da Supabase).
+const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -22,6 +26,13 @@ let SUBMISSOES_PAGE = 1;
 let VI_SUBMISSOES_PAGE = 1;
 const SUBMISSOES_POR_PAGINA = 10;
 const VIDEO_IMPULSIONADO_PLATFORM = "video_impulsionado_drive";
+
+const REDES_LABELS = {
+  instagram: "Instagram",
+  tiktok_shop: "TikTok Shop",
+  shopee: "Shopee",
+  youtube: "YouTube",
+};
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -39,8 +50,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (session) showApp();
   else showLogin();
 
+  // Quando alguém clica no link de "primeiro acesso/esqueci a senha" do
+  // e-mail, o Supabase dispara esse evento com uma sessão temporária —
+  // nesse caso mostramos a tela de definir nova senha em vez do login.
+  client.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") showResetPassword();
+  });
+
   document.getElementById("login-btn").addEventListener("click", handleLogin);
   document.getElementById("logout-btn").addEventListener("click", handleLogout);
+  document.getElementById("forgot-password-link").addEventListener("click", handleForgotPassword);
+  document.getElementById("reset-password-btn").addEventListener("click", handleResetPassword);
 
   document.querySelectorAll(".admin-tab").forEach((tab) => {
     tab.addEventListener("click", () => switchTab(tab.dataset.tab));
@@ -205,7 +225,74 @@ async function handleLogout() {
 
 function showLogin() {
   document.getElementById("login-box").hidden = false;
+  document.getElementById("reset-password-box").hidden = true;
   document.getElementById("admin-app").hidden = true;
+}
+
+function showResetPassword() {
+  document.getElementById("login-box").hidden = true;
+  document.getElementById("reset-password-box").hidden = false;
+  document.getElementById("admin-app").hidden = true;
+}
+
+/* Primeiro acesso e "esqueci a senha" usam o mesmo fluxo: a Supabase manda
+   um e-mail com link de redefinição pro endereço que a pessoa digitar no
+   campo de login (mesmo sem senha nenhuma cadastrada ainda). */
+async function handleForgotPassword(event) {
+  event.preventDefault();
+  const feedback = document.getElementById("login-feedback");
+  const email = document.getElementById("login-email").value.trim();
+
+  if (!email) {
+    feedback.textContent = "Digita seu e-mail no campo acima primeiro, aí clica de novo no link.";
+    feedback.dataset.state = "error";
+    document.getElementById("login-email").focus();
+    return;
+  }
+
+  feedback.textContent = "Enviando e-mail...";
+  feedback.removeAttribute("data-state");
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}`,
+  });
+
+  if (error) {
+    feedback.textContent = `Não conseguimos enviar o e-mail: ${error.message}`;
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  feedback.textContent = "Se esse e-mail estiver cadastrado, chega um link em instantes pra você definir a senha.";
+  feedback.dataset.state = "success";
+}
+
+async function handleResetPassword() {
+  const feedback = document.getElementById("reset-password-feedback");
+  const senha = document.getElementById("reset-password").value;
+  const confirmacao = document.getElementById("reset-password-confirm").value;
+
+  if (!senha || senha.length < 6) {
+    feedback.textContent = "A senha precisa ter pelo menos 6 caracteres.";
+    feedback.dataset.state = "error";
+    return;
+  }
+  if (senha !== confirmacao) {
+    feedback.textContent = "As senhas não são iguais.";
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  const { error } = await client.auth.updateUser({ password: senha });
+  if (error) {
+    feedback.textContent = `Não conseguimos salvar: ${error.message}`;
+    feedback.dataset.state = "error";
+    return;
+  }
+
+  feedback.textContent = "Senha salva! Entrando...";
+  feedback.dataset.state = "success";
+  setTimeout(showApp, 800);
 }
 
 async function showApp() {
@@ -533,7 +620,10 @@ async function loadChamados() {
 
 function renderChamados() {
   const list = document.getElementById("ch-list");
+  const kpisEl = document.getElementById("ch-kpis");
   const filtroStatus = document.getElementById("ch-filter-status")?.value || "";
+
+  if (kpisEl) renderChamadosKpis(kpisEl, ALL_CHAMADOS);
 
   if (ALL_CHAMADOS.length === 0) {
     list.innerHTML = '<p class="admin-empty">Nenhum chamado recebido ainda.</p>';
@@ -550,12 +640,28 @@ function renderChamados() {
   wireChamadoRowActions(list);
 }
 
+function renderChamadosKpis(el, chamados) {
+  const total = chamados.length;
+  const abertos = chamados.filter((c) => c.status !== "respondido").length;
+  const respondidos = chamados.filter((c) => c.status === "respondido").length;
+
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${total}</span><span class="admin-kpi__label">Chamados recebidos</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${abertos}</span><span class="admin-kpi__label">Em aberto</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${respondidos}</span><span class="admin-kpi__label">Respondidos</span></div>
+  `;
+}
+
 function chamadoRowHtml(c) {
   const statusTag = c.status === "respondido"
     ? '<span class="admin-tag admin-tag--ok">Respondido</span>'
     : '<span class="admin-tag admin-tag--pending">Em aberto</span>';
   const recebidoEm = formatDateTime(c.created_at);
   const respondidoEm = formatDateTime(c.responded_at);
+  const handle = (c.instagram_handle || "").replace(/^@+/, "");
+  const redesTexto = Array.isArray(c.redes_ativas) && c.redes_ativas.length
+    ? c.redes_ativas.map((r) => REDES_LABELS[r] || r).join(", ")
+    : "";
 
   return `
     <div class="admin-row admin-row--submissao" data-id="${c.id}">
@@ -563,8 +669,10 @@ function chamadoRowHtml(c) {
         <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
         <p style="font-size:12px;opacity:.75;">
           ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
+          ${handle ? ` · @${escapeHtml(handle)}` : ""}
           ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
         </p>
+        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
         ${
           c.status === "respondido"
@@ -603,6 +711,9 @@ async function saveChamadoResposta(id, resposta, btn) {
   btn.disabled = true;
   btn.textContent = "Salvando…";
 
+  const chamadoAnterior = ALL_CHAMADOS.find((c) => c.id === id);
+  const statusAnterior = chamadoAnterior?.status || "aberto";
+
   const { error } = await client
     .from("aura_hub_seeding_chamados")
     .update({ status: "respondido", resposta, responded_at: new Date().toISOString() })
@@ -615,7 +726,36 @@ async function saveChamadoResposta(id, resposta, btn) {
     return;
   }
 
+  // Só dispara e-mail se realmente virou "respondido" agora (evita reenviar
+  // toda vez que alguém edita a resposta de um chamado já respondido).
+  if (statusAnterior !== "respondido") {
+    notifyChamadoEmail({
+      type: "UPDATE",
+      table: "aura_hub_seeding_chamados",
+      record: { ...chamadoAnterior, status: "respondido", resposta },
+      old_record: { ...chamadoAnterior, status: statusAnterior },
+    });
+  }
+
   loadChamados();
+}
+
+async function notifyChamadoEmail(body) {
+  try {
+    const res = await fetch(CHAMADO_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("send-chamado-email respondeu com erro:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Falha ao chamar send-chamado-email:", err);
+  }
 }
 
 /* ---------- RELATÓRIO ---------- */

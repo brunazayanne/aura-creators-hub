@@ -23,7 +23,25 @@
     <input type="password" id="login-password" autocomplete="current-password">
   </div>
   <button type="button" class="btn btn--dark btn--full" id="login-btn">Entrar</button>
+  <p style="text-align:center;margin-top:10px;">
+    <a href="#" id="forgot-password-link" style="font-size:13px;">Primeiro acesso ou esqueceu a senha? Clique aqui</a>
+  </p>
   <p class="admin-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+</div>
+
+<!-- REDEFINIR SENHA (só aparece vindo do link de e-mail) -->
+<div class="admin-login" id="reset-password-box" hidden>
+  <h1>Definir nova senha</h1>
+  <div class="field">
+    <label for="reset-password">Nova senha</label>
+    <input type="password" id="reset-password" autocomplete="new-password">
+  </div>
+  <div class="field">
+    <label for="reset-password-confirm">Confirmar nova senha</label>
+    <input type="password" id="reset-password-confirm" autocomplete="new-password">
+  </div>
+  <button type="button" class="btn btn--dark btn--full" id="reset-password-btn">Salvar nova senha</button>
+  <p class="admin-feedback" id="reset-password-feedback" role="status" aria-live="polite"></p>
 </div>
 
 <!-- PAINEL (só aparece autenticado) -->
@@ -136,9 +154,6 @@
     </div>
 
     <!-- GRUPO: VÍDEO IMPULSIONADO -->
-    </div>
-
-    <!-- GRUPO: VÍDEO IMPULSIONADO -->
     <div class="admin-group-content" data-group-content="video-impulsionado" hidden>
     <div class="admin-tabs" role="tablist">
       <button type="button" class="admin-tab" data-tab="vi-geral" aria-selected="true">Visão geral</button>
@@ -188,6 +203,10 @@
     <!-- GRUPO: CHAMADOS DE SEEDING -->
     <div class="admin-group-content" data-group-content="chamados" hidden>
     <section class="admin-panel" data-active="true">
+      <div class="admin-card">
+        <h2>Visão geral</h2>
+        <div class="admin-kpis" id="ch-kpis"><p class="admin-empty">Carregando…</p></div>
+      </div>
       <div class="admin-card">
         <h2>Chamados de seeding</h2>
         <p class="section__microcopy" style="margin-bottom:16px;">Problemas reportados pelas creators no formulário de ajuda com seeding. Escreva a resposta aqui e marque como respondido.</p>
