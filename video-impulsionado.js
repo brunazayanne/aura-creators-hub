@@ -23,6 +23,7 @@ const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const DRIVE_UPLOAD_INIT_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-video-impulsionado`;
 const DRIVE_UPLOAD_CHUNK_ENDPOINT = `${DRIVE_UPLOAD_INIT_ENDPOINT}/chunk`;
+const SHEET_LOG_ENDPOINT = `${SUPABASE_URL}/functions/v1/append-video-impulsionado-sheet`;
 // Múltiplo de 256KiB, como o protocolo de upload resumível do Drive exige
 // pra todo pedaço que não seja o último.
 const DRIVE_CHUNK_SIZE = 8 * 1024 * 1024;
@@ -127,6 +128,17 @@ function setupForm() {
       });
 
       await submitToBackend({ ...data, contentUrl: driveFile.url });
+
+      // Registro na planilha de controle é só um espelho pra visão rápida
+      // da Bruna — falha aqui não deve travar a confirmação pra creator,
+      // já que o envio em si (Drive + Supabase) já está garantido.
+      notifySheetLog({
+        nome: data.nome,
+        cupom: data.codigo,
+        categoria: categoriaNome,
+        link: driveFile.url,
+      });
+
       form.reset();
       progressWrap.hidden = true;
 
@@ -352,4 +364,25 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str || "";
   return div.innerHTML;
+}
+
+/* ---------- REGISTRO NA PLANILHA DE CONTROLE (espelho, não crítico) ---------- */
+
+async function notifySheetLog(body) {
+  try {
+    const res = await fetch(SHEET_LOG_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("append-video-impulsionado-sheet respondeu com erro:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Falha ao chamar append-video-impulsionado-sheet:", err);
+  }
 }
