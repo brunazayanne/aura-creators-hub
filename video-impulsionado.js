@@ -24,6 +24,11 @@ const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=
 const DRIVE_UPLOAD_INIT_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-video-impulsionado`;
 const DRIVE_UPLOAD_CHUNK_ENDPOINT = `${DRIVE_UPLOAD_INIT_ENDPOINT}/chunk`;
 const SHEET_LOG_ENDPOINT = `${SUPABASE_URL}/functions/v1/append-video-impulsionado-sheet`;
+// Essa função foi criada depois que o projeto passou a exigir o novo formato
+// de chave (publishable/secret) no gateway de Edge Functions — a SUPABASE_ANON_KEY
+// legada acima continua valendo pro resto do site (REST, Auth), mas é recusada
+// aqui. Usamos a chave publishable nova só nessa chamada específica.
+const SHEET_LOG_API_KEY = "sb_publishable_ITub6GFEc4apnU7x8xq4CQ_nOtr2Eos";
 // Múltiplo de 256KiB, como o protocolo de upload resumível do Drive exige
 // pra todo pedaço que não seja o último.
 const DRIVE_CHUNK_SIZE = 8 * 1024 * 1024;
@@ -374,8 +379,8 @@ async function notifySheetLog(body) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SHEET_LOG_API_KEY,
+        Authorization: `Bearer ${SHEET_LOG_API_KEY}`,
       },
       body: JSON.stringify(body),
     });
