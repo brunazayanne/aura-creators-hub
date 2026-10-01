@@ -18,10 +18,119 @@ const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
 const CHAMADOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_seeding_chamados`;
 const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
+const FORM_FIELDS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_form_fields?select=*&formulario=eq.seeding&ativo=eq.true&order=ordem.asc`;
 
-document.addEventListener("DOMContentLoaded", () => {
+let EXTRA_FIELDS = [];
+
+document.addEventListener("DOMContentLoaded", async () => {
+  EXTRA_FIELDS = await fetchSupabaseList(FORM_FIELDS_ENDPOINT);
+  renderExtraFields(document.getElementById("extra-fields-container"), EXTRA_FIELDS);
   setupForm();
 });
+
+/* ---------- FETCH GENÉRICO (Supabase REST, somente leitura) ---------- */
+
+async function fetchSupabaseList(endpoint) {
+  try {
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!response.ok) throw new Error(`Endpoint respondeu com status ${response.status}`);
+    return await response.json();
+  } catch (err) {
+    console.error(`Falha ao carregar ${endpoint}`, err);
+    return [];
+  }
+}
+
+/* ---------- CAMPOS EXTRAS (configuráveis pela Bruna no admin) ----------
+   Além dos campos fixos deste formulário, a aba "Campos do formulário"
+   do admin deixa adicionar perguntas extras sem precisar mexer em código.
+   Essas respostas vão pra coluna `campos_extra` (JSON) do chamado. */
+
+function renderExtraFields(container, fields) {
+  if (!container) return;
+  container.innerHTML = fields.map(extraFieldHtml).join("");
+}
+
+function extraFieldHtml(f) {
+  const reqMark = f.obrigatorio ? " *" : "";
+  const reqAttr = f.obrigatorio ? "required" : "";
+  const fieldId = `extra_${f.campo_key}`;
+
+  if (f.tipo === "textarea") {
+    return `<div class="field">
+      <label for="${fieldId}">${escapeHtml(f.label)}${reqMark}</label>
+      <textarea id="${fieldId}" rows="3" ${reqAttr}></textarea>
+      <span class="field__error" data-error-for="${fieldId}"></span>
+    </div>`;
+  }
+  if (f.tipo === "select") {
+    const opcoesHtml = (f.opcoes || [])
+      .map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+      .join("");
+    return `<div class="field">
+      <label for="${fieldId}">${escapeHtml(f.label)}${reqMark}</label>
+      <select id="${fieldId}" ${reqAttr}><option value="" disabled selected>Selecione</option>${opcoesHtml}</select>
+      <span class="field__error" data-error-for="${fieldId}"></span>
+    </div>`;
+  }
+  if (f.tipo === "checkbox_group") {
+    const opcoesHtml = (f.opcoes || [])
+      .map(
+        (o) => `<label class="checkbox-option">
+          <input type="checkbox" name="${fieldId}" value="${escapeHtml(o.value)}">
+          ${escapeHtml(o.label)}
+        </label>`
+      )
+      .join("");
+    return `<fieldset class="field field--fieldset">
+      <legend>${escapeHtml(f.label)}${reqMark}</legend>
+      <div class="checkbox-group">${opcoesHtml}</div>
+      <span class="field__error" data-error-for="${fieldId}"></span>
+    </fieldset>`;
+  }
+  return `<div class="field">
+    <label for="${fieldId}">${escapeHtml(f.label)}${reqMark}</label>
+    <input type="text" id="${fieldId}" ${reqAttr}>
+    <span class="field__error" data-error-for="${fieldId}"></span>
+  </div>`;
+}
+
+function validateExtraFields(fields) {
+  const errors = {};
+  fields.forEach((f) => {
+    if (!f.obrigatorio) return;
+    const fieldId = `extra_${f.campo_key}`;
+    if (f.tipo === "checkbox_group") {
+      const checked = document.querySelectorAll(`input[name="${fieldId}"]:checked`).length;
+      if (checked === 0) errors[fieldId] = "Selecione pelo menos uma opção.";
+    } else {
+      const el = document.getElementById(fieldId);
+      if (!el || !el.value.trim()) errors[fieldId] = "Esse campo é obrigatório.";
+    }
+  });
+  return errors;
+}
+
+function getExtraFieldsData(fields) {
+  const campos_extra = {};
+  fields.forEach((f) => {
+    const fieldId = `extra_${f.campo_key}`;
+    if (f.tipo === "checkbox_group") {
+      campos_extra[f.campo_key] = Array.from(document.querySelectorAll(`input[name="${fieldId}"]:checked`)).map(
+        (el) => el.value
+      );
+    } else {
+      const el = document.getElementById(fieldId);
+      campos_extra[f.campo_key] = el ? el.value.trim() : "";
+    }
+  });
+  return campos_extra;
+}
 
 function setupForm() {
   const form = document.getElementById("chamado-form");
@@ -35,7 +144,7 @@ function setupForm() {
     feedback.removeAttribute("data-state");
 
     const data = getFormData(form);
-    const errors = validate(data);
+    const errors = { ...validate(data), ...validateExtraFields(EXTRA_FIELDS) };
 
     if (Object.keys(errors).length > 0) {
       showErrors(errors);
@@ -152,6 +261,7 @@ function buildPayload(data) {
     redes_ativas: data.redes,
     email: data.email,
     mensagem: data.mensagem,
+    campos_extra: getExtraFieldsData(EXTRA_FIELDS),
   };
 }
 

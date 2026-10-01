@@ -34,6 +34,16 @@ const REDES_LABELS = {
   youtube: "YouTube",
 };
 
+const FORM_FIELD_TIPOS = {
+  texto: "Texto curto",
+  textarea: "Texto longo",
+  select: "Lista de opções (escolher uma)",
+  checkbox_group: "Caixas de seleção (escolher várias)",
+};
+
+const FORMULARIOS = ["hub", "video_impulsionado", "seeding"];
+let FORM_FIELDS = { hub: [], video_impulsionado: [], seeding: [] };
+
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
   instagram_story: "Instagram (Story)",
@@ -125,7 +135,201 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   wireVendasUpload();
+  wireFormFieldsManager();
 });
+
+/* ---------- CAMPOS EXTRAS DOS FORMULÁRIOS (self-service pra Bruna) ----------
+   Painel "Campos do formulário" em cada grupo (hub, vídeo impulsionado,
+   seeding). Os campos originais de cada formulário continuam fixos no
+   HTML/JS de cada página — isso aqui só gerencia perguntas extras, que
+   ficam salvas em `aura_hub_form_fields` e as respostas caem na coluna
+   `campos_extra` (JSON) das tabelas de submissão correspondentes. */
+
+function slugifyCampoKey(label) {
+  const base = (label || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60);
+  return base || `campo_${Date.now()}`;
+}
+
+function wireFormFieldsManager() {
+  document.querySelectorAll(".cf-tipo").forEach((select) => {
+    const card = select.closest(".admin-card");
+    const opcoesField = card.querySelector(".cf-opcoes-field");
+    const toggleOpcoes = () => {
+      opcoesField.style.display = select.value === "select" || select.value === "checkbox_group" ? "" : "none";
+    };
+    select.addEventListener("change", toggleOpcoes);
+    toggleOpcoes();
+  });
+
+  document.querySelectorAll(".cf-add").forEach((btn) => {
+    btn.addEventListener("click", () => addFormField(btn.dataset.formulario));
+  });
+
+  FORMULARIOS.forEach(loadFormFields);
+}
+
+async function loadFormFields(formulario) {
+  const { data, error } = await client
+    .from("aura_hub_form_fields")
+    .select("*")
+    .eq("formulario", formulario)
+    .order("ordem", { ascending: true });
+
+  if (error) {
+    renderFormFieldsList(formulario, null, error.message);
+    return;
+  }
+
+  FORM_FIELDS[formulario] = data || [];
+  renderFormFieldsList(formulario, FORM_FIELDS[formulario]);
+}
+
+function renderFormFieldsList(formulario, fields, errorMsg) {
+  const list = document.querySelector(`.cf-list[data-formulario="${formulario}"]`);
+  if (!list) return;
+
+  if (errorMsg) {
+    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(errorMsg)}</p>`;
+    return;
+  }
+
+  if (!fields || fields.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum campo extra cadastrado ainda.</p>';
+    return;
+  }
+
+  list.innerHTML = fields
+    .map(
+      (f, idx) => `
+        <div class="admin-row" data-id="${f.id}">
+          <span>${escapeHtml(f.label)}${f.obrigatorio ? " <strong>*</strong>" : ""} — <span style="opacity:.7;">${escapeHtml(FORM_FIELD_TIPOS[f.tipo] || f.tipo)}</span>${f.ativo ? "" : " (inativo)"}</span>
+          <div class="admin-row__actions">
+            <button type="button" data-action="cf-up" ${idx === 0 ? "disabled" : ""}>&uarr;</button>
+            <button type="button" data-action="cf-down" ${idx === fields.length - 1 ? "disabled" : ""}>&darr;</button>
+            <button type="button" data-action="cf-toggle">${f.ativo ? "Desativar" : "Ativar"}</button>
+            <button type="button" class="danger" data-action="cf-delete">Excluir</button>
+          </div>
+        </div>
+      `
+    )
+    .join("");
+
+  list.querySelectorAll('[data-action="cf-up"]').forEach((btn) =>
+    btn.addEventListener("click", () => moveFormField(formulario, btn.closest("[data-id]").dataset.id, -1))
+  );
+  list.querySelectorAll('[data-action="cf-down"]').forEach((btn) =>
+    btn.addEventListener("click", () => moveFormField(formulario, btn.closest("[data-id]").dataset.id, 1))
+  );
+  list.querySelectorAll('[data-action="cf-toggle"]').forEach((btn) =>
+    btn.addEventListener("click", () => toggleFormFieldAtivo(formulario, btn.closest("[data-id]").dataset.id))
+  );
+  list.querySelectorAll('[data-action="cf-delete"]').forEach((btn) =>
+    btn.addEventListener("click", () => deleteFormField(formulario, btn.closest("[data-id]").dataset.id))
+  );
+}
+
+async function addFormField(formulario) {
+  const addBtn = document.querySelector(`.cf-add[data-formulario="${formulario}"]`);
+  const card = addBtn.closest(".admin-card");
+  const labelInput = card.querySelector(".cf-label");
+  const tipoSelect = card.querySelector(".cf-tipo");
+  const opcoesTextarea = card.querySelector(".cf-opcoes");
+  const obrigatorioCheckbox = card.querySelector(".cf-obrigatorio");
+  const feedback = document.querySelector(`.cf-feedback[data-formulario="${formulario}"]`);
+
+  const label = labelInput.value.trim();
+  const tipo = tipoSelect.value;
+  const obrigatorio = obrigatorioCheckbox.checked;
+
+  if (!label) {
+    feedbackEl2(feedback, "Escreva o rótulo do campo.", "error");
+    return;
+  }
+
+  let opcoes = null;
+  if (tipo === "select" || tipo === "checkbox_group") {
+    const linhas = opcoesTextarea.value.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (linhas.length === 0) {
+      feedbackEl2(feedback, "Adicione pelo menos uma opção, uma por linha.", "error");
+      return;
+    }
+    opcoes = linhas.map((texto) => ({ value: slugifyCampoKey(texto), label: texto }));
+  }
+
+  const campo_key = slugifyCampoKey(label);
+  const maxOrdem = (FORM_FIELDS[formulario] || []).reduce((max, f) => Math.max(max, f.ordem), -1);
+
+  const { error } = await client.from("aura_hub_form_fields").insert({
+    formulario,
+    campo_key,
+    label,
+    tipo,
+    obrigatorio,
+    opcoes,
+    ordem: maxOrdem + 1,
+    ativo: true,
+  });
+
+  if (error) {
+    feedbackEl2(feedback, `Erro: ${error.message}`, "error");
+    return;
+  }
+
+  feedbackEl2(feedback, "Campo adicionado.", "success");
+  labelInput.value = "";
+  opcoesTextarea.value = "";
+  obrigatorioCheckbox.checked = false;
+  loadFormFields(formulario);
+}
+
+async function moveFormField(formulario, id, direction) {
+  const fields = FORM_FIELDS[formulario];
+  const idx = fields.findIndex((f) => f.id === id);
+  const swapIdx = idx + direction;
+  if (idx < 0 || swapIdx < 0 || swapIdx >= fields.length) return;
+
+  const a = fields[idx];
+  const b = fields[swapIdx];
+
+  await Promise.all([
+    client.from("aura_hub_form_fields").update({ ordem: b.ordem }).eq("id", a.id),
+    client.from("aura_hub_form_fields").update({ ordem: a.ordem }).eq("id", b.id),
+  ]);
+
+  loadFormFields(formulario);
+}
+
+async function toggleFormFieldAtivo(formulario, id) {
+  const campo = FORM_FIELDS[formulario].find((f) => f.id === id);
+  if (!campo) return;
+  await client.from("aura_hub_form_fields").update({ ativo: !campo.ativo }).eq("id", id);
+  loadFormFields(formulario);
+}
+
+async function deleteFormField(formulario, id) {
+  if (!confirm("Excluir esse campo? As respostas já recebidas pra ele continuam salvas, só some do formulário.")) return;
+  await client.from("aura_hub_form_fields").delete().eq("id", id);
+  loadFormFields(formulario);
+}
+
+// feedbackEl() já existente limpa a mensagem depois de 4s usando um id fixo —
+// os campos aqui são repetidos 3x (um por formulário), então essa variante
+// recebe o elemento direto em vez de um id.
+function feedbackEl2(el, message, state) {
+  el.textContent = message;
+  el.dataset.state = state;
+  setTimeout(() => {
+    el.textContent = "";
+    el.removeAttribute("data-state");
+  }, 4000);
+}
 
 function populateSubmissaoProdutoFilter() {
   const select = document.getElementById("s-filter-produto");
@@ -311,6 +515,25 @@ function feedbackEl(id, message, state) {
   el.textContent = message;
   el.dataset.state = state;
   setTimeout(() => { el.textContent = ""; el.removeAttribute("data-state"); }, 4000);
+}
+
+// Mostra, de forma genérica, qualquer campo extra (criado via "Campos do
+// formulário") que a creator tenha respondido — sem precisar de código
+// novo pra cada campo que a Bruna adicionar.
+function camposExtraHtml(campos_extra) {
+  if (!campos_extra || typeof campos_extra !== "object") return "";
+  const entries = Object.entries(campos_extra).filter(([, v]) => {
+    if (Array.isArray(v)) return v.length > 0;
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  });
+  if (entries.length === 0) return "";
+  const itens = entries
+    .map(([key, value]) => {
+      const texto = Array.isArray(value) ? value.join(", ") : value;
+      return `${escapeHtml(key)}: ${escapeHtml(String(texto))}`;
+    })
+    .join(" · ");
+  return `<p style="font-size:12px;opacity:.75;margin-top:4px;">${itens}</p>`;
 }
 
 function escapeHtml(str) {
@@ -516,6 +739,7 @@ function renderSubmissoes() {
             </p>
             ${postedAt ? `<p style="font-size:12px;opacity:.75;">Postado em ${escapeHtml(postedAt)}</p>` : ""}
             <p style="font-size:12px;opacity:.75;">${adcodeTag}</p>
+            ${camposExtraHtml(s.campos_extra)}
           </div>
           <div class="admin-submissao__actions">
             <button type="button" data-action="toggle-approve" data-approved="${s.approved}">${s.approved ? "Tirar do mural" : "Aprovar pro mural"}</button>
@@ -673,6 +897,7 @@ function chamadoRowHtml(c) {
           ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
         </p>
         ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
+        ${camposExtraHtml(c.campos_extra)}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
         ${
           c.status === "respondido"
@@ -962,6 +1187,7 @@ function renderVIList() {
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver vídeo no Drive</a>` : ""}
             </p>
             ${postedAt ? `<p style="font-size:12px;opacity:.75;">Enviado em ${escapeHtml(postedAt)}</p>` : ""}
+            ${camposExtraHtml(s.campos_extra)}
           </div>
           <div class="admin-submissao__actions">
             <button type="button" data-action="toggle-vi-approve" data-approved="${s.approved}">${s.approved ? "Tirar da seleção" : "Selecionar pra impulsionar"}</button>

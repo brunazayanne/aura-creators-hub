@@ -64,6 +64,7 @@
       <button type="button" class="admin-tab" data-tab="relatorio" aria-selected="true">Relatório</button>
       <button type="button" class="admin-tab" data-tab="submissoes" aria-selected="false">Submissões</button>
       <button type="button" class="admin-tab" data-tab="categorias" aria-selected="false">Categorias</button>
+      <button type="button" class="admin-tab" data-tab="campos-hub" aria-selected="false">Campos do formulário</button>
     </div>
 
     <!-- RELATÓRIO -->
@@ -151,6 +152,34 @@
         <div class="admin-list" id="c-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
+
+    <!-- CAMPOS DO FORMULÁRIO (HUB) -->
+    <section class="admin-panel" data-panel="campos-hub">
+      <div class="admin-card">
+        <h2>Novo campo extra</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário do Hub de Conteúdos. Os campos originais (nome, cupom, e-mail etc.) continuam fixos — isso aqui é só pra campos novos.</p>
+        <div class="admin-form-row">
+          <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual rede você mais usa?"></div>
+          <div class="field">
+            <label>Tipo</label>
+            <select class="cf-tipo">
+              <option value="texto">Texto curto</option>
+              <option value="textarea">Texto longo</option>
+              <option value="select">Lista de opções (escolher uma)</option>
+              <option value="checkbox_group">Caixas de seleção (escolher várias)</option>
+            </select>
+          </div>
+          <div class="field cf-opcoes-field" style="display:none;"><label>Opções (uma por linha)</label><textarea class="cf-opcoes" rows="3" placeholder="Opção 1&#10;Opção 2"></textarea></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" class="cf-obrigatorio"> Obrigatório</label>
+        <button type="button" class="btn btn--primary cf-add" data-formulario="hub">Adicionar campo</button>
+        <p class="admin-feedback cf-feedback" data-formulario="hub"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Campos cadastrados</h2>
+        <div class="admin-list cf-list" data-formulario="hub"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
     </div>
 
     <!-- GRUPO: VÍDEO IMPULSIONADO -->
@@ -158,6 +187,7 @@
     <div class="admin-tabs" role="tablist">
       <button type="button" class="admin-tab" data-tab="vi-geral" aria-selected="true">Visão geral</button>
       <button type="button" class="admin-tab" data-tab="vi-submissoes" aria-selected="false">Submissões</button>
+      <button type="button" class="admin-tab" data-tab="campos-vi" aria-selected="false">Campos do formulário</button>
     </div>
 
     <!-- VISÃO GERAL -->
@@ -198,11 +228,44 @@
         <div class="admin-list" id="vi-list"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
+
+    <!-- CAMPOS DO FORMULÁRIO (VÍDEO IMPULSIONADO) -->
+    <section class="admin-panel" data-panel="campos-vi">
+      <div class="admin-card">
+        <h2>Novo campo extra</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de Vídeo Impulsionado. Os campos originais (nome, cupom, categoria, arquivo) continuam fixos — isso aqui é só pra campos novos.</p>
+        <div class="admin-form-row">
+          <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual rede você mais usa?"></div>
+          <div class="field">
+            <label>Tipo</label>
+            <select class="cf-tipo">
+              <option value="texto">Texto curto</option>
+              <option value="textarea">Texto longo</option>
+              <option value="select">Lista de opções (escolher uma)</option>
+              <option value="checkbox_group">Caixas de seleção (escolher várias)</option>
+            </select>
+          </div>
+          <div class="field cf-opcoes-field" style="display:none;"><label>Opções (uma por linha)</label><textarea class="cf-opcoes" rows="3" placeholder="Opção 1&#10;Opção 2"></textarea></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" class="cf-obrigatorio"> Obrigatório</label>
+        <button type="button" class="btn btn--primary cf-add" data-formulario="video_impulsionado">Adicionar campo</button>
+        <p class="admin-feedback cf-feedback" data-formulario="video_impulsionado"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Campos cadastrados</h2>
+        <div class="admin-list cf-list" data-formulario="video_impulsionado"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
     </div>
 
     <!-- GRUPO: CHAMADOS DE SEEDING -->
     <div class="admin-group-content" data-group-content="chamados" hidden>
-    <section class="admin-panel" data-active="true">
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab" data-tab="ch-lista" aria-selected="true">Chamados</button>
+      <button type="button" class="admin-tab" data-tab="campos-seeding" aria-selected="false">Campos do formulário</button>
+    </div>
+
+    <section class="admin-panel" data-panel="ch-lista" data-active="true">
       <div class="admin-card">
         <h2>Visão geral</h2>
         <div class="admin-kpis" id="ch-kpis"><p class="admin-empty">Carregando…</p></div>
@@ -218,6 +281,34 @@
           </select>
         </div>
         <div class="admin-list" id="ch-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- CAMPOS DO FORMULÁRIO (SEEDING) -->
+    <section class="admin-panel" data-panel="campos-seeding">
+      <div class="admin-card">
+        <h2>Novo campo extra</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de ajuda com seeding. Os campos originais (nome, CPF, cupom, Instagram, redes, e-mail, mensagem) continuam fixos — isso aqui é só pra campos novos.</p>
+        <div class="admin-form-row">
+          <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual pedido você fez?"></div>
+          <div class="field">
+            <label>Tipo</label>
+            <select class="cf-tipo">
+              <option value="texto">Texto curto</option>
+              <option value="textarea">Texto longo</option>
+              <option value="select">Lista de opções (escolher uma)</option>
+              <option value="checkbox_group">Caixas de seleção (escolher várias)</option>
+            </select>
+          </div>
+          <div class="field cf-opcoes-field" style="display:none;"><label>Opções (uma por linha)</label><textarea class="cf-opcoes" rows="3" placeholder="Opção 1&#10;Opção 2"></textarea></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" class="cf-obrigatorio"> Obrigatório</label>
+        <button type="button" class="btn btn--primary cf-add" data-formulario="seeding">Adicionar campo</button>
+        <p class="admin-feedback cf-feedback" data-formulario="seeding"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Campos cadastrados</h2>
+        <div class="admin-list cf-list" data-formulario="seeding"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
     </div>
