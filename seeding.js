@@ -296,6 +296,12 @@ async function submitChamado(data) {
   return response;
 }
 
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
 async function notifyChamadoEmail(body) {
   try {
     const res = await fetch(CHAMADO_EMAIL_ENDPOINT, {
