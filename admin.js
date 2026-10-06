@@ -520,6 +520,22 @@ function feedbackEl(id, message, state) {
 // Mostra, de forma genérica, qualquer campo extra (criado via "Campos do
 // formulário") que a creator tenha respondido — sem precisar de código
 // novo pra cada campo que a Bruna adicionar.
+// Rótulos amigáveis pra chaves internas (não vêm de "Campos do formulário",
+// são gravadas direto pelo site — hoje só o nome que a creator dá a cada
+// vídeo no popup de identificação do Vídeo Impulsionado).
+const CAMPO_EXTRA_LABELS_INTERNOS = {
+  nome_video: "Nome do vídeo",
+};
+
+function campoExtraLabel(key) {
+  if (CAMPO_EXTRA_LABELS_INTERNOS[key]) return CAMPO_EXTRA_LABELS_INTERNOS[key];
+  for (const formulario of FORMULARIOS) {
+    const campo = (FORM_FIELDS[formulario] || []).find((f) => f.campo_key === key);
+    if (campo) return campo.label;
+  }
+  return key;
+}
+
 function camposExtraHtml(campos_extra) {
   if (!campos_extra || typeof campos_extra !== "object") return "";
   const entries = Object.entries(campos_extra).filter(([, v]) => {
@@ -530,7 +546,7 @@ function camposExtraHtml(campos_extra) {
   const itens = entries
     .map(([key, value]) => {
       const texto = Array.isArray(value) ? value.join(", ") : value;
-      return `${escapeHtml(key)}: ${escapeHtml(String(texto))}`;
+      return `${escapeHtml(campoExtraLabel(key))}: ${escapeHtml(String(texto))}`;
     })
     .join(" · ");
   return `<p style="font-size:12px;opacity:.75;margin-top:4px;">${itens}</p>`;

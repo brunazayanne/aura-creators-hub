@@ -39,6 +39,12 @@ const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB — limite confortáv
 
 let CATEGORIAS = [];
 let EXTRA_FIELDS = [];
+// Preenchido depois que a creator confirma o popup de identificação —
+// um item por arquivo selecionado, na mesma ordem, com { nome, categoriaId }.
+let VIDEO_META = null;
+// Guarda os próprios arquivos pra detectar se a seleção mudou depois de
+// confirmar o popup (ex: a pessoa trocou o arquivo sem reabrir o popup).
+let VIDEO_META_FILES = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const [categorias, extraFields] = await Promise.all([
@@ -47,10 +53,102 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
   CATEGORIAS = categorias;
   EXTRA_FIELDS = extraFields;
-  populateCategoriaSelect(CATEGORIAS);
   renderExtraFields(document.getElementById("extra-fields-container"), EXTRA_FIELDS);
   setupForm();
+  wireVideoMetaModal();
 });
+
+/* ---------- POPUP DE IDENTIFICAÇÃO DOS VÍDEOS ----------
+   Ao escolher o(s) arquivo(s), abre um popup pra creator dar um nome e
+   escolher o produto de cada vídeo — substitui o campo único de "produto"
+   que existia no formulário principal, já que agora cada vídeo do mesmo
+   envio pode ser de um produto diferente. */
+
+function wireVideoMetaModal() {
+  const input = document.getElementById("arquivo");
+  const overlay = document.getElementById("video-meta-overlay");
+  const closeBtn = document.getElementById("video-meta-close");
+  const confirmBtn = document.getElementById("video-meta-confirm");
+
+  input.addEventListener("change", () => {
+    const files = Array.from(input.files || []);
+    VIDEO_META = null;
+    VIDEO_META_FILES = null;
+    if (files.length === 0) return;
+    openVideoMetaModal(files);
+  });
+
+  closeBtn.addEventListener("click", () => {
+    // Fecha sem confirmar = não dá pra saber o produto de cada vídeo,
+    // então limpa a seleção pra evitar enviar sem essa informação.
+    input.value = "";
+    VIDEO_META = null;
+    VIDEO_META_FILES = null;
+    overlay.hidden = true;
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    const files = Array.from(input.files || []);
+    const rows = document.querySelectorAll("#video-meta-list [data-video-index]");
+    const meta = [];
+    let erro = "";
+
+    rows.forEach((row) => {
+      const nome = row.querySelector(".vm-nome").value.trim();
+      const categoriaId = row.querySelector(".vm-categoria").value;
+      if (!nome || !categoriaId) erro = "Preencha o nome e o produto de todos os vídeos.";
+      meta.push({ nome, categoriaId });
+    });
+
+    const errorEl = document.getElementById("video-meta-error");
+    if (erro) {
+      errorEl.textContent = erro;
+      return;
+    }
+
+    errorEl.textContent = "";
+    VIDEO_META = meta;
+    VIDEO_META_FILES = files;
+    overlay.hidden = true;
+  });
+}
+
+function openVideoMetaModal(files) {
+  const overlay = document.getElementById("video-meta-overlay");
+  const list = document.getElementById("video-meta-list");
+  const errorEl = document.getElementById("video-meta-error");
+  errorEl.textContent = "";
+
+  const opcoesHtml = CATEGORIAS.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nome)}</option>`).join("");
+
+  list.innerHTML = files
+    .map((file, idx) => {
+      const nomeSemExtensao = file.name.replace(/\.[^/.]+$/, "");
+      return `
+        <div class="field" data-video-index="${idx}" style="border-top:1px solid var(--placeholder-gray);padding-top:14px;margin-top:14px;">
+          <label style="font-size:12px;opacity:.7;">Vídeo ${idx + 1} de ${files.length} — ${escapeHtml(file.name)}</label>
+          <input type="text" class="vm-nome" placeholder="Nome do vídeo" value="${escapeHtml(nomeSemExtensao)}">
+          <select class="vm-categoria">
+            <option value="" disabled selected>Qual produto?</option>
+            ${opcoesHtml}
+          </select>
+        </div>
+      `;
+    })
+    .join("");
+
+  overlay.hidden = false;
+}
+
+function validateVideoMeta(arquivos) {
+  if (arquivos.length === 0) return null;
+  if (!VIDEO_META || !VIDEO_META_FILES || VIDEO_META_FILES.length !== arquivos.length) {
+    return "Identifique o nome e o produto de cada vídeo antes de enviar.";
+  }
+  const mudou = arquivos.some((f, idx) => VIDEO_META_FILES[idx] !== f);
+  if (mudou) return "Identifique o nome e o produto de cada vídeo antes de enviar.";
+  return null;
+}
 
 /* ---------- CAMPOS EXTRAS (configuráveis pela Bruna no admin) ----------
    Além dos campos fixos deste formulário, a aba "Campos do formulário"
@@ -156,19 +254,6 @@ async function fetchSupabaseList(endpoint) {
   }
 }
 
-/* ---------- SELECT DE CATEGORIA/PRODUTO ---------- */
-
-function populateCategoriaSelect(categorias) {
-  const select = document.getElementById("categoria_produto");
-  select.innerHTML = '<option value="" disabled selected>Selecione</option>';
-  categorias.forEach((cat) => {
-    const el = document.createElement("option");
-    el.value = cat.id;
-    el.textContent = cat.nome;
-    select.appendChild(el);
-  });
-}
-
 /* ---------- CONTAGEM DE ENVIOS POR CREATOR (feedback de reconhecimento) ---------- */
 
 async function countSubmissionsByCupom(cupom) {
@@ -207,52 +292,83 @@ function setupForm() {
     feedback.removeAttribute("data-state");
 
     const data = getFormData(form);
+    const videoMetaErro = validateVideoMeta(data.arquivos);
     const errors = { ...validate(data), ...validateExtraFields(EXTRA_FIELDS) };
+    if (videoMetaErro) errors.arquivo = videoMetaErro;
 
     if (Object.keys(errors).length > 0) {
       showErrors(errors);
       const firstErrorField = form.querySelector('[aria-invalid="true"]');
       if (firstErrorField) firstErrorField.focus();
+      if (videoMetaErro && data.arquivos.length > 0) openVideoMetaModal(data.arquivos);
       return;
     }
 
     setLoading(submitBtn, true);
     progressWrap.hidden = false;
-    updateProgress(progressFill, progressLabel, 0);
+    updateProgress(progressFill, progressLabel, 0, 1, data.arquivos.length);
 
-    try {
-      const categoriaNome = CATEGORIAS.find((c) => c.id === data.categoria_produto)?.nome || "Outros";
-      const driveFile = await uploadVideoToDrive(data.arquivo, categoriaNome, (percent) => {
-        updateProgress(progressFill, progressLabel, percent);
-      });
+    const campos_extra = getExtraFieldsData(EXTRA_FIELDS);
+    const total = data.arquivos.length;
+    let sucesso = 0;
+    const falhas = [];
 
-      await submitToBackend({ ...data, contentUrl: driveFile.url });
+    for (let i = 0; i < total; i++) {
+      const arquivo = data.arquivos[i];
+      const meta = VIDEO_META[i];
+      const categoriaNome = CATEGORIAS.find((c) => c.id === meta.categoriaId)?.nome || "Outros";
 
-      // Registro na planilha de controle é só um espelho pra visão rápida
-      // da Bruna — falha aqui não deve travar a confirmação pra creator,
-      // já que o envio em si (Drive + Supabase) já está garantido.
-      notifySheetLog({
-        nome: data.nome,
-        cupom: data.codigo,
-        categoria: categoriaNome,
-        link: driveFile.url,
-      });
+      try {
+        const driveFile = await uploadVideoToDrive(arquivo, categoriaNome, (percent) => {
+          updateProgress(progressFill, progressLabel, percent, i + 1, total);
+        });
 
+        await submitToBackend({
+          ...data,
+          contentUrl: driveFile.url,
+          categoriaNome,
+          campos_extra: { ...campos_extra, nome_video: meta.nome },
+        });
+
+        // Registro na planilha de controle é só um espelho pra visão rápida
+        // da Bruna — falha aqui não deve travar a confirmação pra creator,
+        // já que o envio em si (Drive + Supabase) já está garantido.
+        notifySheetLog({
+          nome: data.nome,
+          cupom: data.codigo,
+          categoria: categoriaNome,
+          link: driveFile.url,
+        });
+
+        sucesso += 1;
+      } catch (err) {
+        console.error(`Falha ao enviar "${arquivo.name}":`, err);
+        falhas.push(arquivo.name);
+      }
+    }
+
+    progressWrap.hidden = true;
+    setLoading(submitBtn, false);
+
+    if (sucesso > 0) {
       form.reset();
-      progressWrap.hidden = true;
+      VIDEO_META = null;
+      VIDEO_META_FILES = null;
+    }
 
-      const total = await countSubmissionsByCupom(data.codigo);
-      feedback.textContent = total
-        ? `Recebemos seu vídeo — esse já é o seu ${total}º envio! Nosso time confere o material e avisa você se ele for selecionado pra impulsionar.`
-        : "Recebemos seu vídeo. Nosso time confere o material e avisa você se ele for selecionado pra impulsionar.";
+    if (falhas.length === 0) {
+      const totalEnviados = await countSubmissionsByCupom(data.codigo);
+      const plural = sucesso > 1 ? `${sucesso} vídeos` : "seu vídeo";
+      feedback.textContent = totalEnviados
+        ? `Recebemos ${plural} — esse já é o seu ${totalEnviados}º envio no total! Nosso time confere o material e avisa você se algum for selecionado pra impulsionar.`
+        : `Recebemos ${plural}. Nosso time confere o material e avisa você se algum for selecionado pra impulsionar.`;
       feedback.dataset.state = "success";
-    } catch (err) {
-      console.error(err);
-      feedback.textContent = "Algo não saiu como esperado no envio do vídeo. Tenta de novo em alguns instantes.";
+    } else if (sucesso > 0) {
+      feedback.textContent = `${sucesso} de ${total} vídeos enviados. Não conseguimos enviar: ${falhas.join(", ")}. Tenta reenviar só esse(s) de novo.`;
       feedback.dataset.state = "error";
-      progressWrap.hidden = true;
-    } finally {
-      setLoading(submitBtn, false);
+    } else {
+      feedback.textContent = "Algo não saiu como esperado no envio do(s) vídeo(s). Tenta de novo em alguns instantes.";
+      feedback.dataset.state = "error";
     }
   });
 }
@@ -261,8 +377,7 @@ function getFormData(form) {
   return {
     nome: form.nome.value.trim(),
     codigo: form.codigo.value.trim(),
-    categoria_produto: form.categoria_produto.value,
-    arquivo: form.arquivo.files[0] || null,
+    arquivos: Array.from(form.arquivo.files || []),
   };
 }
 
@@ -272,23 +387,27 @@ function validate(data) {
 
   if (!data.nome) errors.nome = REQUIRED_MSG;
   if (!data.codigo) errors.codigo = REQUIRED_MSG;
-  if (!data.categoria_produto) errors.categoria_produto = "Selecione o produto.";
 
-  if (!data.arquivo) {
-    errors.arquivo = REQUIRED_MSG;
-  } else if (!data.arquivo.type.startsWith("video/")) {
-    errors.arquivo = "Esse arquivo não parece ser um vídeo. Confira o formato e tenta de novo.";
-  } else if (data.arquivo.size > MAX_FILE_SIZE_BYTES) {
-    errors.arquivo = "Esse arquivo passou do limite de 2GB. Fala com a gente pelo WhatsApp pra enviar de outro jeito.";
+  if (!data.arquivos || data.arquivos.length === 0) {
+    errors.arquivo = "Selecione pelo menos um arquivo.";
+  } else {
+    const invalido = data.arquivos.find((f) => !f.type.startsWith("video/"));
+    const grandeDemais = data.arquivos.find((f) => f.size > MAX_FILE_SIZE_BYTES);
+    if (invalido) {
+      errors.arquivo = `"${invalido.name}" não parece ser um vídeo. Confira o formato e tenta de novo.`;
+    } else if (grandeDemais) {
+      errors.arquivo = `"${grandeDemais.name}" passou do limite de 2GB. Fala com a gente pelo WhatsApp pra enviar de outro jeito.`;
+    }
   }
 
   return errors;
 }
 
-function updateProgress(fillEl, labelEl, percent) {
+function updateProgress(fillEl, labelEl, percent, indiceAtual, total) {
   const rounded = Math.round(percent);
   fillEl.style.width = `${rounded}%`;
-  labelEl.textContent = `Enviando... ${rounded}%`;
+  labelEl.textContent =
+    total > 1 ? `Enviando vídeo ${indiceAtual} de ${total}... ${rounded}%` : `Enviando... ${rounded}%`;
 }
 
 /* ---------- UPLOAD PRO DRIVE (via Edge Function + sessão resumível) ----------
@@ -412,14 +531,10 @@ function setLoading(button, isLoading) {
 /* payload no formato da tabela aura_hub_submissions (Supabase) —
    mesma tabela do hub principal, identificado pelo content_platform fixo. */
 function buildPayload(data) {
-  const produtoLabel = data.categoria_produto
-    ? CATEGORIAS.find((c) => c.id === data.categoria_produto)?.nome || null
-    : null;
-
   return {
     briefing_id: null,
     seguiu_briefing: false,
-    categoria_produto: produtoLabel,
+    categoria_produto: data.categoriaNome || null,
     produto_nome: null,
     submitted_at: new Date().toISOString(),
     creator_name: data.nome,
@@ -435,7 +550,7 @@ function buildPayload(data) {
     consent_public_display: false,
     boost_authorized: true,
     boost_adcode: null,
-    campos_extra: getExtraFieldsData(EXTRA_FIELDS),
+    campos_extra: data.campos_extra || getExtraFieldsData(EXTRA_FIELDS),
   };
 }
 

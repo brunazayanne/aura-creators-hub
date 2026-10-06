@@ -55,17 +55,10 @@
           <span class="field__error" data-error-for="codigo"></span>
         </div>
 
-        <div class="field" id="bloco-categoria">
-          <label for="categoria_produto">Com qual produto você gravou? *</label>
-          <select id="categoria_produto" name="categoria_produto">
-            <option value="" disabled selected>Selecione</option>
-          </select>
-          <span class="field__error" data-error-for="categoria_produto"></span>
-        </div>
-
         <div class="field" id="bloco-arquivo">
-          <label for="arquivo">Arquivo do vídeo *</label>
-          <input type="file" id="arquivo" name="arquivo" accept="video/*" required>
+          <label for="arquivo">Arquivo(s) do vídeo *</label>
+          <input type="file" id="arquivo" name="arquivo" accept="video/*" multiple required>
+          <span class="field__hint">Pode selecionar vários vídeos de uma vez — depois de escolher, você dá um nome e escolhe o produto de cada um.</span>
           <span class="field__error" data-error-for="arquivo"></span>
         </div>
 
@@ -134,6 +127,18 @@
     <p class="footer__contato">Contato/suporte: <a href="https://wa.me/5511936217656" target="_blank" rel="noopener">WhatsApp Influenciadoras (11) 93621-7656</a></p>
   </div>
 </footer>
+
+<!-- IDENTIFICAÇÃO DOS VÍDEOS (abre ao selecionar os arquivos) -->
+<div class="modal-overlay" id="video-meta-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="video-meta-title">
+    <button type="button" class="modal__close" id="video-meta-close" aria-label="Fechar">&times;</button>
+    <h2 id="video-meta-title" class="section__title" style="font-size:20px;">Identifique seus vídeos</h2>
+    <p class="modal__descricao">Dê um nome e escolha o produto de cada vídeo selecionado.</p>
+    <div id="video-meta-list"></div>
+    <p class="field__error" id="video-meta-error"></p>
+    <button type="button" class="btn btn--dark btn--full" id="video-meta-confirm" style="margin-top:8px;">Confirmar e continuar</button>
+  </div>
+</div>
 
 <script src="video-impulsionado.js"></script>
 </body>
