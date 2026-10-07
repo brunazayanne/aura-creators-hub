@@ -261,8 +261,14 @@ function buildPayload(data) {
     redes_ativas: data.redes,
     email: data.email,
     mensagem: data.mensagem,
-    campos_extra: getExtraFieldsData(EXTRA_FIELDS),
+    campos_extra: { ...getExtraFieldsData(EXTRA_FIELDS), _hp: getHoneypotValue() },
   };
+}
+
+/* campo-isca anti-bot: invisível pro usuário real, some bots preenchem automaticamente */
+function getHoneypotValue() {
+  const el = document.getElementById("site-extra");
+  return el ? el.value.trim() : "";
 }
 
 async function submitChamado(data) {

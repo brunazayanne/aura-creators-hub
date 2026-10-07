@@ -545,6 +545,8 @@ summary:focus-visible {
 .field--checkbox input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; }
 .field--checkbox label { font-weight: 400; font-size: 13px; line-height: 1.5; }
 
+.field--hp { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
 .field--fieldset { border: none; padding: 0; margin: 0; }
 .field--fieldset legend { font-size: 13px; font-weight: 700; color: var(--brown); padding: 0; margin-bottom: 8px; }
 .radio-group { display: flex; gap: 20px; }

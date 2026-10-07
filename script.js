@@ -393,8 +393,14 @@ function buildPayload(data) {
     consent_public_display: data.consentimento,
     boost_authorized: data.boost === "sim",
     boost_adcode: data.boost === "sim" ? data.adcode : null,
-    campos_extra: getExtraFieldsData(EXTRA_FIELDS),
+    campos_extra: { ...getExtraFieldsData(EXTRA_FIELDS), _hp: getHoneypotValue() },
   };
+}
+
+/* campo-isca anti-bot: invisível pro usuário real, some bots preenchem automaticamente */
+function getHoneypotValue() {
+  const el = document.getElementById("site-extra");
+  return el ? el.value.trim() : "";
 }
 
 async function submitToBackend(data) {
