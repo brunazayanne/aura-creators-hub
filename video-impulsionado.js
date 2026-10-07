@@ -19,22 +19,20 @@
 
 const SUPABASE_URL = "https://vjpspclcruvcesuifuva.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHNwY2xjcnV2Y2VzdWlmdXZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyMjU1OTAsImV4cCI6MjEwMzgwMTU5MH0.7XDAaW-XL5E-C_0XXoS9CGM9KA692bI24RoPcQau1-s";
-const WEBHOOK_URL = `${SUPABASE_URL}/rest/v1/aura_hub_submissions`;
 const CATEGORIAS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_categorias?select=*&ativo=eq.true&order=ordem.asc`;
 const FORM_FIELDS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_form_fields?select=*&formulario=eq.video_impulsionado&ativo=eq.true&order=ordem.asc`;
 const DRIVE_UPLOAD_INIT_ENDPOINT = `${SUPABASE_URL}/functions/v1/upload-video-impulsionado`;
 const DRIVE_UPLOAD_CHUNK_ENDPOINT = `${DRIVE_UPLOAD_INIT_ENDPOINT}/chunk`;
-const SHEET_LOG_ENDPOINT = `${SUPABASE_URL}/functions/v1/append-video-impulsionado-sheet`;
-// Essa função foi criada depois que o projeto passou a exigir o novo formato
-// de chave (publishable/secret) no gateway de Edge Functions — a SUPABASE_ANON_KEY
-// legada acima continua valendo pro resto do site (REST, Auth), mas é recusada
-// aqui. Usamos a chave publishable nova só nessa chamada específica.
-const SHEET_LOG_API_KEY = "sb_publishable_ITub6GFEc4apnU7x8xq4CQ_nOtr2Eos";
+// Registro no Supabase (aura_hub_submissions) e na planilha de controle
+// agora acontecem do lado do servidor (dentro da Edge Function), logo após
+// o Drive confirmar o upload — o navegador nunca mais vê o link real do
+// arquivo nem o ID da pasta, porque a pasta da categoria no Drive está
+// compartilhada como "qualquer um com o link" e esses dados davam acesso
+// de leitura a todos os vídeos da mesma categoria, não só ao da creator.
 // Múltiplo de 256KiB, como o protocolo de upload resumível do Drive exige
 // pra todo pedaço que não seja o último.
 const DRIVE_CHUNK_SIZE = 8 * 1024 * 1024;
 
-const CONTENT_PLATFORM_TAG = "video_impulsionado_drive";
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB — limite confortável pra vídeo bruto de creator
 
 let CATEGORIAS = [];
@@ -319,26 +317,22 @@ function setupForm() {
       const categoriaNome = CATEGORIAS.find((c) => c.id === meta.categoriaId)?.nome || "Outros";
 
       try {
-        const driveFile = await uploadVideoToDrive(arquivo, categoriaNome, (percent) => {
-          updateProgress(progressFill, progressLabel, percent, i + 1, total);
-        });
-
-        await submitToBackend({
-          ...data,
-          contentUrl: driveFile.url,
-          categoriaNome,
-          campos_extra: { ...campos_extra, nome_video: meta.nome },
-        });
-
-        // Registro na planilha de controle é só um espelho pra visão rápida
-        // da Bruna — falha aqui não deve travar a confirmação pra creator,
-        // já que o envio em si (Drive + Supabase) já está garantido.
-        notifySheetLog({
-          nome: data.nome,
-          cupom: data.codigo,
-          categoria: categoriaNome,
-          link: driveFile.url,
-        });
+        // O servidor cuida de registrar a submissão no Supabase e na
+        // planilha assim que o Drive confirma o upload — o navegador só
+        // acompanha o progresso e sabe se deu certo ou não.
+        await uploadVideoToDrive(
+          arquivo,
+          {
+            categoriaNome,
+            nome: data.nome,
+            cupom: data.codigo,
+            nomeVideo: meta.nome,
+            camposExtra: campos_extra,
+          },
+          (percent) => {
+            updateProgress(progressFill, progressLabel, percent, i + 1, total);
+          }
+        );
 
         sucesso += 1;
       } catch (err) {
@@ -418,7 +412,7 @@ function updateProgress(fillEl, labelEl, percent, indiceAtual, total) {
    Function (mesma origem seguindo o padrão de CORS que a gente controla),
    que repassa cada pedaço pro Drive por trás. */
 
-async function uploadVideoToDrive(file, categoriaNome, onProgress) {
+async function uploadVideoToDrive(file, meta, onProgress) {
   const initResponse = await fetch(DRIVE_UPLOAD_INIT_ENDPOINT, {
     method: "POST",
     headers: {
@@ -427,7 +421,7 @@ async function uploadVideoToDrive(file, categoriaNome, onProgress) {
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({
-      categoria: categoriaNome,
+      categoria: meta.categoriaNome,
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type || "video/mp4",
@@ -443,11 +437,22 @@ async function uploadVideoToDrive(file, categoriaNome, onProgress) {
     throw new Error(error || "O servidor não retornou uma URL de upload.");
   }
 
-  return await uploadFileInChunks(uploadUrl, file, onProgress);
+  return await uploadFileInChunks(uploadUrl, file, meta, onProgress);
 }
 
-function uploadFileInChunks(uploadUrl, file, onProgress) {
+function uploadFileInChunks(uploadUrl, file, meta, onProgress) {
   const total = file.size;
+  // Manda os dados da creator/vídeo em cada pedaço — é o servidor quem usa
+  // isso pra registrar a submissão assim que o Drive confirmar o upload.
+  // Tudo que vai aqui já é informação que a própria creator digitou no
+  // formulário, então não tem nada de novo sendo exposto pra ela mesma.
+  const metaHeaders = {
+    "X-Creator-Nome": encodeURIComponent(meta.nome || ""),
+    "X-Creator-Cupom": encodeURIComponent(meta.cupom || ""),
+    "X-Categoria": encodeURIComponent(meta.categoriaNome || ""),
+    "X-Nome-Video": encodeURIComponent(meta.nomeVideo || ""),
+    "X-Campos-Extra": encodeURIComponent(JSON.stringify(meta.camposExtra || {})),
+  };
 
   return new Promise((resolve, reject) => {
     let offset = 0;
@@ -462,6 +467,7 @@ function uploadFileInChunks(uploadUrl, file, onProgress) {
       xhr.setRequestHeader("Authorization", `Bearer ${SUPABASE_ANON_KEY}`);
       xhr.setRequestHeader("X-Drive-Upload-Url", uploadUrl);
       xhr.setRequestHeader("Content-Range", `bytes ${offset}-${end - 1}/${total}`);
+      Object.entries(metaHeaders).forEach(([key, value]) => xhr.setRequestHeader(key, value));
 
       xhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable && onProgress) {
@@ -488,17 +494,15 @@ function uploadFileInChunks(uploadUrl, file, onProgress) {
           return;
         }
 
-        if (data.file) {
-          onProgress && onProgress(100);
-          const driveFile = data.file || {};
-          const url = driveFile.webViewLink || (driveFile.id ? `https://drive.google.com/file/d/${driveFile.id}/view` : null);
-          resolve({ id: driveFile.id, url });
+        if (data.status === 308) {
+          offset = end;
+          sendNextChunk();
           return;
         }
 
-        // status 308 = Drive recebeu esse pedaço, ainda faltam mais.
-        offset = end;
-        sendNextChunk();
+        // Upload + registro da submissão concluídos do lado do servidor.
+        onProgress && onProgress(100);
+        resolve();
       };
 
       xhr.onerror = () => reject(new Error("Falha de rede durante o envio do vídeo."));
@@ -528,76 +532,8 @@ function setLoading(button, isLoading) {
   button.classList.toggle("btn--loading", isLoading);
 }
 
-/* payload no formato da tabela aura_hub_submissions (Supabase) —
-   mesma tabela do hub principal, identificado pelo content_platform fixo. */
-function buildPayload(data) {
-  return {
-    briefing_id: null,
-    seguiu_briefing: false,
-    categoria_produto: data.categoriaNome || null,
-    produto_nome: null,
-    submitted_at: new Date().toISOString(),
-    creator_name: data.nome,
-    // creator_email / creator_phone / instagram_handle são colunas NOT NULL
-    // na aura_hub_submissions, mas esse formulário não pede mais esses dados —
-    // manda string vazia pra não quebrar o insert.
-    creator_email: "",
-    creator_phone: "",
-    coupon_code: data.codigo,
-    instagram_handle: "",
-    content_platform: CONTENT_PLATFORM_TAG,
-    content_url: data.contentUrl,
-    consent_public_display: false,
-    boost_authorized: true,
-    boost_adcode: null,
-    campos_extra: data.campos_extra || getExtraFieldsData(EXTRA_FIELDS),
-  };
-}
-
-async function submitToBackend(data) {
-  const payload = buildPayload(data);
-
-  const response = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Webhook respondeu com status ${response.status}`);
-  }
-
-  return response;
-}
-
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str || "";
   return div.innerHTML;
-}
-
-/* ---------- REGISTRO NA PLANILHA DE CONTROLE (espelho, não crítico) ---------- */
-
-async function notifySheetLog(body) {
-  try {
-    const res = await fetch(SHEET_LOG_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SHEET_LOG_API_KEY,
-        Authorization: `Bearer ${SHEET_LOG_API_KEY}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      console.error("append-video-impulsionado-sheet respondeu com erro:", res.status, await res.text());
-    }
-  } catch (err) {
-    console.error("Falha ao chamar append-video-impulsionado-sheet:", err);
-  }
 }
