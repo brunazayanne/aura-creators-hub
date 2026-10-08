@@ -13,7 +13,7 @@
    (Sheets em vez de Drive) e o destino da chamada. A planilha já foi
    compartilhada com o e-mail da service account como Editor.
 
-   Coluna G ("Nome do vídeo"): adicionada pra creator conseguir
+   Coluna G ("Nome do Briefing"): adicionada pra creator conseguir
    identificar cada arquivo quando manda mais de um vídeo na mesma
    categoria — antes esse nome (digitado no modal de metadados) só
    ia pro campos_extra do Supabase, nunca pra planilha.

@@ -524,7 +524,7 @@ function feedbackEl(id, message, state) {
 // são gravadas direto pelo site — hoje só o nome que a creator dá a cada
 // vídeo no popup de identificação do Vídeo Impulsionado).
 const CAMPO_EXTRA_LABELS_INTERNOS = {
-  nome_video: "Nome do vídeo",
+  nome_video: "Nome do Briefing",
 };
 
 function campoExtraLabel(key) {

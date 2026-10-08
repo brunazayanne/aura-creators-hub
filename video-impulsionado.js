@@ -125,7 +125,7 @@ function openVideoMetaModal(files) {
       return `
         <div class="field" data-video-index="${idx}" style="border-top:1px solid var(--placeholder-gray);padding-top:14px;margin-top:14px;">
           <label style="font-size:12px;opacity:.7;">Vídeo ${idx + 1} de ${files.length} — ${escapeHtml(file.name)}</label>
-          <input type="text" class="vm-nome" placeholder="Nome do vídeo" value="${escapeHtml(nomeSemExtensao)}">
+          <input type="text" class="vm-nome" placeholder="Nome do Briefing" value="${escapeHtml(nomeSemExtensao)}">
           <select class="vm-categoria">
             <option value="" disabled selected>Qual produto?</option>
             ${opcoesHtml}
