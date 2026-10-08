@@ -1001,8 +1001,14 @@ async function notifyChamadoEmail(body) {
 
 /* ---------- RELATÓRIO ---------- */
 
+const MES_LABELS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 async function loadRelatorio() {
   const kpisEl = document.getElementById("r-kpis");
+  const mesEl = document.getElementById("r-mes");
   const plataformaEl = document.getElementById("r-plataforma");
   const produtoEl = document.getElementById("r-produto");
   const rankingEl = document.getElementById("r-ranking");
@@ -1015,16 +1021,50 @@ async function loadRelatorio() {
   const submissions = hubSubmissoes();
 
   if (submissions.length === 0) {
-    [kpisEl, plataformaEl, produtoEl, rankingEl].forEach((el) => {
+    [kpisEl, mesEl, plataformaEl, produtoEl, rankingEl].forEach((el) => {
       el.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
     });
     return;
   }
 
   renderRelatorioKpis(kpisEl, submissions);
+  renderRelatorioMes(mesEl, submissions);
   renderRelatorioPlataforma(plataformaEl, submissions);
   renderRelatorioProduto(produtoEl, submissions);
   renderRelatorioRanking(rankingEl, submissions);
+}
+
+/* separa as submissões por mês de criação (ano-mês), mais recente primeiro */
+function renderRelatorioMes(el, submissions) {
+  const counts = {};
+  submissions.forEach((s) => {
+    const d = new Date(s.created_at);
+    if (isNaN(d.getTime())) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const rows = Object.entries(counts).sort((a, b) => b[0].localeCompare(a[0]));
+  const total = submissions.length;
+
+  if (rows.length === 0) {
+    el.innerHTML = '<p class="admin-empty">Nenhuma submissão recebida ainda.</p>';
+    return;
+  }
+
+  el.innerHTML = rows
+    .map(([key, count]) => {
+      const [ano, mes] = key.split("-");
+      const label = `${MES_LABELS[Number(mes) - 1]}/${ano}`;
+      const pct = Math.round((count / total) * 100);
+      return `
+        <div class="admin-row admin-row--metric">
+          <span>${label}</span>
+          <span class="admin-row__metric-value">${count} <span class="admin-row__metric-pct">(${pct}%)</span></span>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function renderRelatorioKpis(el, submissions) {
