@@ -252,22 +252,31 @@ async function fetchSupabaseList(endpoint) {
   }
 }
 
-/* ---------- CONTAGEM DE ENVIOS POR CREATOR (feedback de reconhecimento) ---------- */
+/* ---------- CONTAGEM DE ENVIOS POR CREATOR (feedback de reconhecimento) ----------
+   Usa a RPC get_creator_stats em vez de um SELECT direto: o RLS de
+   aura_hub_submissions não libera SELECT pra anon (só INSERT), então o
+   SELECT direto daqui sempre voltava vazio — essa mensagem de
+   reconhecimento nunca aparecia de verdade pra ninguém. A RPC é
+   SECURITY DEFINER e devolve só a contagem (mês + total) e o nome,
+   nunca e-mail/telefone. */
 
 async function countSubmissionsByCupom(cupom) {
   if (!cupom) return null;
   try {
-    const endpoint = `${SUPABASE_URL}/rest/v1/aura_hub_submissions?coupon_code=eq.${encodeURIComponent(cupom)}&select=id`;
+    const endpoint = `${SUPABASE_URL}/rest/v1/rpc/get_creator_stats`;
     const response = await fetch(endpoint, {
+      method: "POST",
       headers: {
+        "Content-Type": "application/json",
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        Prefer: "count=exact",
       },
+      body: JSON.stringify({ p_cupom: cupom }),
     });
     if (!response.ok) return null;
     const data = await response.json();
-    return Array.isArray(data) ? data.length : null;
+    const stats = Array.isArray(data) ? data[0] : null;
+    return stats ? stats.total_geral : null;
   } catch {
     return null;
   }
@@ -370,7 +379,7 @@ function setupForm() {
 function getFormData(form) {
   return {
     nome: form.nome.value.trim(),
-    codigo: form.codigo.value.trim(),
+    codigo: form.codigo.value.trim().toUpperCase(),
     arquivos: Array.from(form.arquivo.files || []),
   };
 }

@@ -387,7 +387,11 @@ async function registrarSubmissao(
     content_platform: "video_impulsionado_drive",
     content_url: contentUrl,
     consent_public_display: false,
-    boost_authorized: true,
+    // boost_authorized sempre volta false aqui — o trigger
+    // aura_hub_submissions_lock_admin_cols (BEFORE INSERT) reseta essa
+    // coluna em todo INSERT, inclusive via service_role. Quem autoriza o
+    // impulsionamento é o admin depois, via UPDATE no painel.
+    boost_authorized: false,
     boost_adcode: null,
     campos_extra: { ...meta.camposExtra, nome_video: meta.nomeVideo },
   };

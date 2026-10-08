@@ -177,7 +177,7 @@ function getFormData(form) {
   return {
     nome: form.nome.value.trim(),
     cpf: form.cpf.value.trim(),
-    cupom: form.cupom.value.trim(),
+    cupom: form.cupom.value.trim().toUpperCase(),
     instagram: form.instagram.value.trim(),
     redes: redesSelecionadas,
     email: form.email.value.trim(),

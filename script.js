@@ -201,22 +201,30 @@ function populateCategoriaSelect(categorias) {
    Sem limite de envios por briefing — a creator pode mandar
    quantos conteúdos quiser. Depois de cada envio, contamos
    quantos ela já mandou (pelo cupom) só pra dar um feedback
-   de reconhecimento na hora. */
+   de reconhecimento na hora.
+
+   Usa a mesma RPC get_creator_stats (SECURITY DEFINER) que a Home
+   e o Vídeo Impulsionado usam — uma leitura direta em
+   aura_hub_submissions aqui sempre voltava vazia pro anon (não tem
+   policy de SELECT pra esse perfil, só INSERT), então o "esse já é
+   o seu Xº envio" nunca aparecia de verdade pra nenhuma creator. */
 
 async function countSubmissionsByCupom(cupom) {
   if (!cupom) return null;
   try {
-    const endpoint = `${SUPABASE_URL}/rest/v1/aura_hub_submissions?coupon_code=eq.${encodeURIComponent(cupom)}&select=id`;
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_creator_stats`, {
+      method: "POST",
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        Prefer: "count=exact",
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({ p_cupom: cupom }),
     });
     if (!response.ok) return null;
-    const data = await response.json();
-    return Array.isArray(data) ? data.length : null;
+    const rows = await response.json();
+    const stats = Array.isArray(rows) ? rows[0] : rows;
+    return stats ? stats.total_geral : null;
   } catch {
     return null;
   }
@@ -290,7 +298,7 @@ function getFormData(form) {
     nome: form.nome.value.trim(),
     email: form.email.value.trim(),
     whatsapp: form.whatsapp.value.trim(),
-    codigo: form.codigo.value.trim(),
+    codigo: form.codigo.value.trim().toUpperCase(),
     instagram: form.instagram.value.trim().replace(/^@+/, ""),
     categoria_produto: form.categoria_produto.value,
     plataforma: form.plataforma.value,
