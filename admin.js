@@ -564,6 +564,48 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+/* ---------- ANEXOS DE IMAGEM (chamados de seeding + chamados gerais) ----------
+   Bucket privado no Storage: a miniatura some com uma URL só de leitura
+   (createSignedUrl), gerada aqui na hora de renderizar, via sessão logada
+   do admin. Reaproveitado pelos dois grupos de chamados. */
+
+function anexosHtml(anexos) {
+  if (!Array.isArray(anexos) || anexos.length === 0) return "";
+  return `
+    <div class="admin-anexos">
+      ${anexos
+        .map(
+          (a) => `
+        <div class="admin-anexos__item">
+          <img class="admin-anexos__thumb" data-anexo-path="${escapeHtml(a.path || "")}" alt="${escapeHtml(a.legenda || a.nome_arquivo || "Anexo")}">
+          ${a.legenda ? `<span class="admin-anexos__legenda">${escapeHtml(a.legenda)}</span>` : ""}
+        </div>`
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+async function loadAnexosThumbnails(container) {
+  const imgs = Array.from(container.querySelectorAll("[data-anexo-path]"));
+  await Promise.all(
+    imgs.map(async (img) => {
+      const path = img.dataset.anexoPath;
+      if (!path) return;
+      try {
+        const { data, error } = await client.storage.from("chamados-anexos").createSignedUrl(path, 3600);
+        if (error || !data?.signedUrl) throw error || new Error("Sem signedUrl");
+        img.src = data.signedUrl;
+        img.style.cursor = "pointer";
+        img.addEventListener("click", () => window.open(data.signedUrl, "_blank", "noopener"));
+      } catch (err) {
+        console.error("Falha ao gerar signed URL do anexo:", path, err);
+        img.alt = "Não foi possível carregar essa imagem.";
+      }
+    })
+  );
+}
+
 function isPast(prazo) {
   if (!prazo) return false;
   const hoje = new Date();
@@ -884,6 +926,7 @@ function renderChamados() {
 
   list.innerHTML = data.map(chamadoRowHtml).join("");
   wireChamadoRowActions(list);
+  loadAnexosThumbnails(list);
 }
 
 function renderChamadosKpis(el, chamados) {
@@ -921,6 +964,7 @@ function chamadoRowHtml(c) {
         ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         ${camposExtraHtml(c.campos_extra)}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
+        ${anexosHtml(c.anexos)}
         ${
           c.status === "respondido"
             ? `<div style="margin-top:10px;padding:10px 12px;background:var(--offwhite);border-radius:var(--radius-sm);">
@@ -1043,6 +1087,7 @@ function renderChamadosGerais() {
 
   list.innerHTML = data.map(chamadoGeralRowHtml).join("");
   wireChamadoGeralRowActions(list);
+  loadAnexosThumbnails(list);
 }
 
 function renderChamadosGeraisKpis(el, chamados) {
@@ -1080,6 +1125,7 @@ function chamadoGeralRowHtml(c) {
         ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         ${camposExtraHtml(c.campos_extra)}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
+        ${anexosHtml(c.anexos)}
         ${
           c.status === "respondido"
             ? `<div style="margin-top:10px;padding:10px 12px;background:var(--offwhite);border-radius:var(--radius-sm);">

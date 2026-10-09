@@ -55,8 +55,8 @@
     <div class="admin-groups" role="tablist">
       <button type="button" class="admin-group" data-group="hub" aria-selected="true">Hub de Conteúdos</button>
       <button type="button" class="admin-group" data-group="video-impulsionado" aria-selected="false">Vídeo Impulsionado</button>
+      <button type="button" class="admin-group" data-group="chamados-gerais" aria-selected="false">Suporte e Ajuda</button>
       <button type="button" class="admin-group" data-group="chamados" aria-selected="false">Chamados de seeding</button>
-      <button type="button" class="admin-group" data-group="chamados-gerais" aria-selected="false">Chamados Gerais</button>
     </div>
 
     <!-- GRUPO: HUB DE CONTEÚDOS -->
@@ -264,6 +264,61 @@
     </section>
     </div>
 
+    <!-- GRUPO: SUPORTE E AJUDA (CHAMADOS GERAIS) -->
+    <div class="admin-group-content" data-group-content="chamados-gerais" hidden>
+    <div class="admin-tabs" role="tablist">
+      <button type="button" class="admin-tab" data-tab="chg-lista" aria-selected="true">Chamados</button>
+      <button type="button" class="admin-tab" data-tab="campos-chamados-gerais" aria-selected="false">Campos do formulário</button>
+    </div>
+
+    <section class="admin-panel" data-panel="chg-lista" data-active="true">
+      <div class="admin-card">
+        <h2>Visão geral</h2>
+        <div class="admin-kpis" id="chg-kpis"><p class="admin-empty">Carregando…</p></div>
+      </div>
+      <div class="admin-card">
+        <h2>Suporte e Ajuda</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Dúvidas sobre pagamento, acesso, comissão e outros assuntos gerais enviados pelas creators. Escreva a resposta aqui e marque como respondido.</p>
+        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          <select id="chg-filter-status">
+            <option value="">Todos os status</option>
+            <option value="aberto">Em aberto</option>
+            <option value="respondido">Respondidos</option>
+          </select>
+        </div>
+        <div class="admin-list" id="chg-list"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- CAMPOS DO FORMULÁRIO (CHAMADOS GERAIS) -->
+    <section class="admin-panel" data-panel="campos-chamados-gerais">
+      <div class="admin-card">
+        <h2>Novo campo extra</h2>
+        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de suporte e ajuda. Os campos originais (nome, CPF, cupom, redes, e-mail, mensagem) continuam fixos — isso aqui é só pra campos novos.</p>
+        <div class="admin-form-row">
+          <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual pedido você fez?"></div>
+          <div class="field">
+            <label>Tipo</label>
+            <select class="cf-tipo">
+              <option value="texto">Texto curto</option>
+              <option value="textarea">Texto longo</option>
+              <option value="select">Lista de opções (escolher uma)</option>
+              <option value="checkbox_group">Caixas de seleção (escolher várias)</option>
+            </select>
+          </div>
+          <div class="field cf-opcoes-field" style="display:none;"><label>Opções (uma por linha)</label><textarea class="cf-opcoes" rows="3" placeholder="Opção 1&#10;Opção 2"></textarea></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" class="cf-obrigatorio"> Obrigatório</label>
+        <button type="button" class="btn btn--primary cf-add" data-formulario="chamados_gerais">Adicionar campo</button>
+        <p class="admin-feedback cf-feedback" data-formulario="chamados_gerais"></p>
+      </div>
+      <div class="admin-card">
+        <h2>Campos cadastrados</h2>
+        <div class="admin-list cf-list" data-formulario="chamados_gerais"><p class="admin-empty">Carregando…</p></div>
+      </div>
+    </section>
+    </div>
+
     <!-- GRUPO: CHAMADOS DE SEEDING -->
     <div class="admin-group-content" data-group-content="chamados" hidden>
     <div class="admin-tabs" role="tablist">
@@ -294,7 +349,7 @@
     <section class="admin-panel" data-panel="campos-seeding">
       <div class="admin-card">
         <h2>Novo campo extra</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de ajuda com seeding. Os campos originais (nome, CPF, cupom, Instagram, redes, e-mail, mensagem) continuam fixos — isso aqui é só pra campos novos.</p>
+        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de ajuda com seeding. Os campos originais (nome, CPF, cupom, redes, e-mail, mensagem) continuam fixos — isso aqui é só pra campos novos.</p>
         <div class="admin-form-row">
           <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual pedido você fez?"></div>
           <div class="field">
@@ -315,61 +370,6 @@
       <div class="admin-card">
         <h2>Campos cadastrados</h2>
         <div class="admin-list cf-list" data-formulario="seeding"><p class="admin-empty">Carregando…</p></div>
-      </div>
-    </section>
-    </div>
-
-    <!-- GRUPO: CHAMADOS GERAIS -->
-    <div class="admin-group-content" data-group-content="chamados-gerais" hidden>
-    <div class="admin-tabs" role="tablist">
-      <button type="button" class="admin-tab" data-tab="chg-lista" aria-selected="true">Chamados</button>
-      <button type="button" class="admin-tab" data-tab="campos-chamados-gerais" aria-selected="false">Campos do formulário</button>
-    </div>
-
-    <section class="admin-panel" data-panel="chg-lista" data-active="true">
-      <div class="admin-card">
-        <h2>Visão geral</h2>
-        <div class="admin-kpis" id="chg-kpis"><p class="admin-empty">Carregando…</p></div>
-      </div>
-      <div class="admin-card">
-        <h2>Chamados gerais</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Dúvidas e suporte geral enviados pelas creators pelo formulário de chamado. Escreva a resposta aqui e marque como respondido.</p>
-        <div class="admin-filter-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-          <select id="chg-filter-status">
-            <option value="">Todos os status</option>
-            <option value="aberto">Em aberto</option>
-            <option value="respondido">Respondidos</option>
-          </select>
-        </div>
-        <div class="admin-list" id="chg-list"><p class="admin-empty">Carregando…</p></div>
-      </div>
-    </section>
-
-    <!-- CAMPOS DO FORMULÁRIO (CHAMADOS GERAIS) -->
-    <section class="admin-panel" data-panel="campos-chamados-gerais">
-      <div class="admin-card">
-        <h2>Novo campo extra</h2>
-        <p class="section__microcopy" style="margin-bottom:16px;">Adicione perguntas extras pro formulário de chamado geral. Os campos originais (nome, CPF, cupom, Instagram, redes, e-mail, mensagem) continuam fixos — isso aqui é só pra campos novos.</p>
-        <div class="admin-form-row">
-          <div class="field"><label>Pergunta / rótulo *</label><input type="text" class="cf-label" placeholder="Ex: Qual pedido você fez?"></div>
-          <div class="field">
-            <label>Tipo</label>
-            <select class="cf-tipo">
-              <option value="texto">Texto curto</option>
-              <option value="textarea">Texto longo</option>
-              <option value="select">Lista de opções (escolher uma)</option>
-              <option value="checkbox_group">Caixas de seleção (escolher várias)</option>
-            </select>
-          </div>
-          <div class="field cf-opcoes-field" style="display:none;"><label>Opções (uma por linha)</label><textarea class="cf-opcoes" rows="3" placeholder="Opção 1&#10;Opção 2"></textarea></div>
-        </div>
-        <label style="display:flex;align-items:center;gap:6px;margin-bottom:12px;"><input type="checkbox" class="cf-obrigatorio"> Obrigatório</label>
-        <button type="button" class="btn btn--primary cf-add" data-formulario="chamados_gerais">Adicionar campo</button>
-        <p class="admin-feedback cf-feedback" data-formulario="chamados_gerais"></p>
-      </div>
-      <div class="admin-card">
-        <h2>Campos cadastrados</h2>
-        <div class="admin-list cf-list" data-formulario="chamados_gerais"><p class="admin-empty">Carregando…</p></div>
       </div>
     </section>
     </div>

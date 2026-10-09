@@ -487,6 +487,39 @@ body.has-nav { padding-bottom: 68px; }
 }
 .upload-progress__label { font-size: 12px; color: var(--brown); }
 
+/* ---------- PREVIEW DE IMAGENS ANEXADAS (seeding / chamados) ---------- */
+.imagens-preview { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
+.imagens-preview__item { width: 140px; display: flex; flex-direction: column; gap: 6px; }
+.imagens-preview__thumb {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--placeholder-gray);
+  background: var(--placeholder-gray);
+}
+.imagens-preview__legenda {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 7px 9px;
+  border: 1px solid var(--placeholder-gray);
+  border-radius: var(--radius-sm);
+  color: var(--brown);
+}
+.imagens-preview__legenda::placeholder { color: #a29c8f; }
+.imagens-preview__remove {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--brown);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  opacity: .75;
+}
+.imagens-preview__remove:hover { opacity: 1; }
+
 
 /* ---------- PÁGINA ADMIN (/admin.html) ---------- */
 .admin-body { background: var(--offwhite); min-height: 100vh; }
@@ -699,6 +732,20 @@ body.has-nav { padding-bottom: 68px; }
 .admin-tag--ok { background: var(--sucesso); color: var(--white); }
 .admin-tag--pending { background: var(--tan); color: var(--brown); }
 .admin-tag--briefing { background: rgba(172,138,83,0.12); color: var(--gold); border: 1px solid var(--gold); }
+
+/* anexos de imagem nos chamados */
+.admin-anexos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.admin-anexos__item { display: flex; flex-direction: column; gap: 4px; width: 100px; }
+.admin-anexos__thumb {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--placeholder-gray);
+  background: var(--placeholder-gray);
+  display: block;
+}
+.admin-anexos__legenda { font-size: 11px; opacity: .75; line-height: 1.3; }
 
 /* relatório */
 .admin-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AURA Creators Club — Abrir chamado</title>
-<meta name="description" content="Precisa de suporte? Conta pra gente aqui que a nossa equipe te responde por e-mail.">
+<title>AURA Creators Club — Suporte e Ajuda</title>
+<meta name="description" content="Dúvida sobre pagamento, acesso, comissão ou qualquer outro assunto que não seja sobre seeding ou vídeo impulsionado? Conta pra gente aqui que a nossa equipe responde por e-mail.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -21,14 +21,15 @@
   <section class="hero" aria-labelledby="hero-title">
     <img class="hero-mandala" src="assets/mandala.svg" alt="" aria-hidden="true">
     <div class="hero__inner" style="text-align: center;">
-      <span class="eyebrow">Abrir chamado</span>
-      <h1 id="hero-title" class="hero__title" style="margin-left: auto; margin-right: auto;">Precisa de ajuda<br>com alguma coisa?</h1>
-      <p class="hero__subtitle" style="margin-left: auto; margin-right: auto;">Conta pra gente aqui embaixo o que está acontecendo — dúvida, problema, sugestão, qualquer coisa. Sem precisar chamar no WhatsApp.</p>
+      <span class="eyebrow">Suporte e Ajuda</span>
+      <h1 id="hero-title" class="hero__title" style="margin-left: auto; margin-right: auto;">Como a gente<br>pode te ajudar?</h1>
+      <p class="hero__subtitle" style="margin-left: auto; margin-right: auto;">Use esse espaço pra dúvidas sobre pagamento e comissão, acesso à sua conta, regras do programa ou qualquer outro assunto que não se encaixe nos formulários específicos. A gente te responde por e-mail, sem precisar chamar no WhatsApp.</p>
+      <p class="hero__subtitle" style="margin-left: auto; margin-right: auto; margin-top: 8px; opacity: .85;">Problema com um produto que não chegou ou veio errado? Usa o formulário de <a href="seeding.html" style="color: inherit; text-decoration: underline;">Problema no seeding</a> — a resposta sai mais rápido.</p>
     </div>
   </section>
 
   <!-- FORMULÁRIO -->
-  <section class="section" id="formulario" aria-label="Formulário de chamado">
+  <section class="section" id="formulario" aria-label="Formulário de suporte">
     <div class="section__inner">
       <p style="text-align: center;"><span class="eyebrow" id="formulario-intro">Preencha os dados abaixo</span></p>
 
@@ -51,12 +52,6 @@
           <label for="cupom">Seu cupom *</label>
           <input type="text" id="cupom" name="cupom" placeholder="Cupom cadastrado no AURA Creators Club" required>
           <span class="field__error" data-error-for="cupom"></span>
-        </div>
-
-        <div class="field">
-          <label for="instagram">@ do Instagram *</label>
-          <input type="text" id="instagram" name="instagram" placeholder="@seuinstagram" autocomplete="off" required>
-          <span class="field__error" data-error-for="instagram"></span>
         </div>
 
         <fieldset class="field field--fieldset">
@@ -89,9 +84,17 @@
         </div>
 
         <div class="field">
-          <label for="mensagem">Conta pra gente o que você precisa</label>
-          <textarea id="mensagem" name="mensagem" rows="5" placeholder="Descreva sua dúvida ou o que aconteceu, com o máximo de detalhes possível" required></textarea>
+          <label for="mensagem">Conta pra gente o que você precisa *</label>
+          <textarea id="mensagem" name="mensagem" rows="5" placeholder="Descreva sua dúvida com detalhes. Ex: se for sobre pagamento, inclui o período; se for sobre acesso, inclui o e-mail usado no cadastro." required></textarea>
           <span class="field__error" data-error-for="mensagem"></span>
+        </div>
+
+        <div class="field" id="bloco-imagens">
+          <label for="imagens">Imagens (opcional)</label>
+          <input type="file" id="imagens" name="imagens" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple>
+          <span class="field__hint">Print de pagamento, foto do problema, o que ajudar a entender. Até 5 imagens, 8MB cada. Depois de escolher, dá pra identificar o que é cada uma.</span>
+          <span class="field__error" data-error-for="imagens"></span>
+          <div id="imagens-preview" class="imagens-preview"></div>
         </div>
 
         <div id="extra-fields-container"></div>

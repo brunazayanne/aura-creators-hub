@@ -20,12 +20,23 @@ const CHAMADOS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_seeding_chamados`;
 const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
 const FORM_FIELDS_ENDPOINT = `${SUPABASE_URL}/rest/v1/aura_hub_form_fields?select=*&formulario=eq.seeding&ativo=eq.true&order=ordem.asc`;
 
+/* Anexos de imagem: bucket privado no Supabase Storage (só o time logado
+   consegue ler, via signed URL gerada no admin). Limite de 5 imagens,
+   8MB cada — mesmo limite garantido no bucket e na constraint do banco. */
+const ANEXOS_BUCKET = "chamados-anexos";
+const ANEXOS_MAX_COUNT = 5;
+const ANEXOS_MAX_SIZE = 8 * 1024 * 1024;
+const ANEXOS_ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const anexosEndpoint = (path) => `${SUPABASE_URL}/storage/v1/object/${ANEXOS_BUCKET}/${encodeURIComponent(path)}`;
+
 let EXTRA_FIELDS = [];
+let SELECTED_IMAGES = []; // [{ file, legenda }]
 
 document.addEventListener("DOMContentLoaded", async () => {
   EXTRA_FIELDS = await fetchSupabaseList(FORM_FIELDS_ENDPOINT);
   renderExtraFields(document.getElementById("extra-fields-container"), EXTRA_FIELDS);
   setupForm();
+  document.getElementById("imagens")?.addEventListener("change", handleImagensChange);
 });
 
 /* ---------- FETCH GENÉRICO (Supabase REST, somente leitura) ---------- */
@@ -132,6 +143,95 @@ function getExtraFieldsData(fields) {
   return campos_extra;
 }
 
+/* ---------- IMAGENS ANEXADAS (opcional, até 5, com identificação) ---------- */
+
+function handleImagensChange(event) {
+  const files = Array.from(event.target.files || []);
+  const erroEl = document.querySelector('[data-error-for="imagens"]');
+  if (erroEl) erroEl.textContent = "";
+
+  const avisos = [];
+  let validos = files.filter((file) => {
+    if (!ANEXOS_ALLOWED_TYPES.includes(file.type)) {
+      avisos.push(`"${file.name}" não é um formato de imagem aceito.`);
+      return false;
+    }
+    if (file.size > ANEXOS_MAX_SIZE) {
+      avisos.push(`"${file.name}" passa de 8MB.`);
+      return false;
+    }
+    return true;
+  });
+
+  if (validos.length > ANEXOS_MAX_COUNT) {
+    avisos.push(`Só dá pra anexar até ${ANEXOS_MAX_COUNT} imagens — as primeiras ${ANEXOS_MAX_COUNT} foram mantidas.`);
+    validos = validos.slice(0, ANEXOS_MAX_COUNT);
+  }
+
+  SELECTED_IMAGES = validos.map((file) => ({ file, legenda: "" }));
+  renderImagePreviews();
+
+  if (avisos.length > 0 && erroEl) erroEl.textContent = avisos.join(" ");
+}
+
+function renderImagePreviews() {
+  const container = document.getElementById("imagens-preview");
+  if (!container) return;
+
+  container.innerHTML = SELECTED_IMAGES.map((item, index) => `
+    <div class="imagens-preview__item" data-index="${index}">
+      <img class="imagens-preview__thumb" src="${URL.createObjectURL(item.file)}" alt="">
+      <input type="text" class="imagens-preview__legenda" data-role="legenda" placeholder="O que é essa imagem?" value="${escapeHtml(item.legenda)}">
+      <button type="button" class="imagens-preview__remove" data-role="remove">Remover</button>
+    </div>
+  `).join("");
+
+  container.querySelectorAll('[data-role="legenda"]').forEach((input) => {
+    input.addEventListener("input", (e) => {
+      const index = Number(e.target.closest("[data-index]").dataset.index);
+      SELECTED_IMAGES[index].legenda = e.target.value;
+    });
+  });
+
+  container.querySelectorAll('[data-role="remove"]').forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const index = Number(e.target.closest("[data-index]").dataset.index);
+      SELECTED_IMAGES.splice(index, 1);
+      renderImagePreviews();
+    });
+  });
+}
+
+function resetImagens() {
+  SELECTED_IMAGES = [];
+  const container = document.getElementById("imagens-preview");
+  if (container) container.innerHTML = "";
+}
+
+async function uploadImagens(chamadoId) {
+  const anexos = [];
+  for (let i = 0; i < SELECTED_IMAGES.length; i++) {
+    const { file, legenda } = SELECTED_IMAGES[i];
+    const extensao = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${chamadoId}/${i}-${Date.now()}.${extensao}`;
+
+    const response = await fetch(anexosEndpoint(path), {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
+
+    if (!response.ok) throw new Error(`Falha ao enviar imagem (status ${response.status})`);
+
+    anexos.push({ path, legenda: legenda.trim(), nome_arquivo: file.name });
+  }
+  return anexos;
+}
+
 function setupForm() {
   const form = document.getElementById("chamado-form");
   const feedback = document.getElementById("form-feedback");
@@ -154,10 +254,12 @@ function setupForm() {
     }
 
     setLoading(submitBtn, true);
+    if (SELECTED_IMAGES.length > 0) feedback.textContent = "Enviando imagens…";
 
     try {
       await submitChamado(data);
       form.reset();
+      resetImagens();
       feedback.textContent = "Chamado recebido! Você vai receber uma cópia do que escreveu por e-mail, e a nossa resposta chega no mesmo endereço assim que o time conferir.";
       feedback.dataset.state = "success";
     } catch (err) {
@@ -178,7 +280,6 @@ function getFormData(form) {
     nome: form.nome.value.trim(),
     cpf: form.cpf.value.trim(),
     cupom: form.cupom.value.trim().toUpperCase(),
-    instagram: form.instagram.value.trim(),
     redes: redesSelecionadas,
     email: form.email.value.trim(),
     mensagem: form.mensagem.value.trim(),
@@ -198,8 +299,6 @@ function validate(data) {
   }
 
   if (!data.cupom) errors.cupom = REQUIRED_MSG;
-
-  if (!data.instagram) errors.instagram = REQUIRED_MSG;
 
   if (!data.redes || data.redes.length === 0) {
     errors.redes = "Marca pelo menos uma rede.";
@@ -252,15 +351,16 @@ function setLoading(button, isLoading) {
   button.classList.toggle("btn--loading", isLoading);
 }
 
-function buildPayload(data) {
+function buildPayload(data, id, anexos) {
   return {
+    id,
     nome: data.nome,
     cpf: data.cpf.replace(/\D/g, ""),
     cupom: data.cupom,
-    instagram_handle: data.instagram.replace(/^@+/, ""),
     redes_ativas: data.redes,
     email: data.email,
     mensagem: data.mensagem,
+    anexos: anexos || [],
     campos_extra: { ...getExtraFieldsData(EXTRA_FIELDS), _hp: getHoneypotValue() },
   };
 }
@@ -272,7 +372,9 @@ function getHoneypotValue() {
 }
 
 async function submitChamado(data) {
-  const payload = buildPayload(data);
+  const chamadoId = crypto.randomUUID();
+  const anexos = await uploadImagens(chamadoId);
+  const payload = buildPayload(data, chamadoId, anexos);
 
   const response = await fetch(CHAMADOS_ENDPOINT, {
     method: "POST",
