@@ -15,6 +15,9 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // send-chamado-email direto daqui (mesmo motivo documentado em seeding.js —
 // Database Webhook não pôde ser configurado por bug de infra da Supabase).
 const CHAMADO_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-email`;
+// E-mail de resposta do chamado geral: mesma lógica acima, função irmã
+// (send-chamado-geral-email) pra não misturar com os chamados de seeding.
+const CHAMADO_GERAL_EMAIL_ENDPOINT = `${SUPABASE_URL}/functions/v1/send-chamado-geral-email`;
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -22,6 +25,7 @@ let CATEGORIAS = [];
 let BRIEFINGS = [];
 let ALL_SUBMISSOES = [];
 let ALL_CHAMADOS = [];
+let ALL_CHAMADOS_GERAIS = [];
 let SUBMISSOES_PAGE = 1;
 let VI_SUBMISSOES_PAGE = 1;
 const SUBMISSOES_POR_PAGINA = 10;
@@ -41,8 +45,8 @@ const FORM_FIELD_TIPOS = {
   checkbox_group: "Caixas de seleção (escolher várias)",
 };
 
-const FORMULARIOS = ["hub", "video_impulsionado", "seeding"];
-let FORM_FIELDS = { hub: [], video_impulsionado: [], seeding: [] };
+const FORMULARIOS = ["hub", "video_impulsionado", "seeding", "chamados_gerais"];
+let FORM_FIELDS = { hub: [], video_impulsionado: [], seeding: [], chamados_gerais: [] };
 
 const PLATAFORMA_LABELS = {
   instagram: "Instagram (Reels)",
@@ -108,6 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   document.getElementById("ch-filter-status")?.addEventListener("change", renderChamados);
+  document.getElementById("chg-filter-status")?.addEventListener("change", renderChamadosGerais);
 
   document.getElementById("vi-filter-produto")?.addEventListener("change", () => {
     VI_SUBMISSOES_PAGE = 1;
@@ -505,6 +510,7 @@ async function showApp() {
   loadCategorias();
   await loadSubmissoes();
   loadChamados();
+  loadChamadosGerais();
   loadRelatorio();
 }
 
@@ -996,6 +1002,165 @@ async function notifyChamadoEmail(body) {
     }
   } catch (err) {
     console.error("Falha ao chamar send-chamado-email:", err);
+  }
+}
+
+/* ---------- CHAMADOS GERAIS ---------- */
+
+async function loadChamadosGerais() {
+  const list = document.getElementById("chg-list");
+  const { data, error } = await client
+    .from("aura_hub_chamados_gerais")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    list.innerHTML = `<p class="admin-empty">Erro ao carregar: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  ALL_CHAMADOS_GERAIS = data || [];
+  renderChamadosGerais();
+}
+
+function renderChamadosGerais() {
+  const list = document.getElementById("chg-list");
+  const kpisEl = document.getElementById("chg-kpis");
+  const filtroStatus = document.getElementById("chg-filter-status")?.value || "";
+
+  if (kpisEl) renderChamadosGeraisKpis(kpisEl, ALL_CHAMADOS_GERAIS);
+
+  if (ALL_CHAMADOS_GERAIS.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum chamado recebido ainda.</p>';
+    return;
+  }
+
+  const data = ALL_CHAMADOS_GERAIS.filter((c) => !filtroStatus || c.status === filtroStatus);
+  if (data.length === 0) {
+    list.innerHTML = '<p class="admin-empty">Nenhum chamado encontrado com esse filtro.</p>';
+    return;
+  }
+
+  list.innerHTML = data.map(chamadoGeralRowHtml).join("");
+  wireChamadoGeralRowActions(list);
+}
+
+function renderChamadosGeraisKpis(el, chamados) {
+  const total = chamados.length;
+  const abertos = chamados.filter((c) => c.status !== "respondido").length;
+  const respondidos = chamados.filter((c) => c.status === "respondido").length;
+
+  el.innerHTML = `
+    <div class="admin-kpi"><span class="admin-kpi__valor">${total}</span><span class="admin-kpi__label">Chamados recebidos</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${abertos}</span><span class="admin-kpi__label">Em aberto</span></div>
+    <div class="admin-kpi"><span class="admin-kpi__valor">${respondidos}</span><span class="admin-kpi__label">Respondidos</span></div>
+  `;
+}
+
+function chamadoGeralRowHtml(c) {
+  const statusTag = c.status === "respondido"
+    ? '<span class="admin-tag admin-tag--ok">Respondido</span>'
+    : '<span class="admin-tag admin-tag--pending">Em aberto</span>';
+  const recebidoEm = formatDateTime(c.created_at);
+  const respondidoEm = formatDateTime(c.responded_at);
+  const handle = (c.instagram_handle || "").replace(/^@+/, "");
+  const redesTexto = Array.isArray(c.redes_ativas) && c.redes_ativas.length
+    ? c.redes_ativas.map((r) => REDES_LABELS[r] || r).join(", ")
+    : "";
+
+  return `
+    <div class="admin-row admin-row--submissao" data-id="${c.id}">
+      <div class="admin-submissao__info">
+        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
+        <p style="font-size:12px;opacity:.75;">
+          ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
+          ${handle ? ` · @${escapeHtml(handle)}` : ""}
+          ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
+        </p>
+        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
+        ${camposExtraHtml(c.campos_extra)}
+        <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
+        ${
+          c.status === "respondido"
+            ? `<div style="margin-top:10px;padding:10px 12px;background:var(--offwhite);border-radius:var(--radius-sm);">
+                <p style="font-size:12px;opacity:.75;margin-bottom:4px;">Resposta enviada${respondidoEm ? ` em ${escapeHtml(respondidoEm)}` : ""}:</p>
+                <p style="white-space:pre-wrap;">${escapeHtml(c.resposta || "")}</p>
+              </div>`
+            : ""
+        }
+      </div>
+      <div class="admin-submissao__actions" style="flex-direction:column;align-items:stretch;">
+        <textarea data-role="chg-resposta" rows="3" placeholder="Escreva a resposta pra creator" style="font-family:var(--font);font-size:14px;padding:10px 12px;border:1px solid var(--placeholder-gray);border-radius:var(--radius-sm);resize:vertical;">${escapeHtml(c.resposta || "")}</textarea>
+        <button type="button" data-action="save-resposta">${c.status === "respondido" ? "Salvar nova resposta" : "Marcar como respondido"}</button>
+      </div>
+    </div>
+  `;
+}
+
+function wireChamadoGeralRowActions(container) {
+  container.querySelectorAll('[data-action="save-resposta"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const row = btn.closest("[data-id]");
+      const id = row.dataset.id;
+      const textarea = row.querySelector('[data-role="chg-resposta"]');
+      saveChamadoGeralResposta(id, textarea.value.trim(), btn);
+    })
+  );
+}
+
+async function saveChamadoGeralResposta(id, resposta, btn) {
+  if (!resposta) {
+    alert("Escreva a resposta antes de salvar.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Salvando…";
+
+  const chamadoAnterior = ALL_CHAMADOS_GERAIS.find((c) => c.id === id);
+  const statusAnterior = chamadoAnterior?.status || "aberto";
+
+  const { error } = await client
+    .from("aura_hub_chamados_gerais")
+    .update({ status: "respondido", resposta, responded_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) {
+    alert(`Erro ao salvar resposta: ${error.message}`);
+    btn.disabled = false;
+    btn.textContent = "Marcar como respondido";
+    return;
+  }
+
+  // Só dispara e-mail se realmente virou "respondido" agora (evita reenviar
+  // toda vez que alguém edita a resposta de um chamado já respondido).
+  if (statusAnterior !== "respondido") {
+    notifyChamadoGeralEmail({
+      type: "UPDATE",
+      table: "aura_hub_chamados_gerais",
+      record: { ...chamadoAnterior, status: "respondido", resposta },
+      old_record: { ...chamadoAnterior, status: statusAnterior },
+    });
+  }
+
+  loadChamadosGerais();
+}
+
+async function notifyChamadoGeralEmail(body) {
+  try {
+    const res = await fetch(CHAMADO_GERAL_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error("send-chamado-geral-email respondeu com erro:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Falha ao chamar send-chamado-geral-email:", err);
   }
 }
 

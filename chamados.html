@@ -4,31 +4,130 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AURA Creators Club — Abrir chamado</title>
-<meta name="description" content="Precisa de suporte? Fale com o time AURA Creators Club.">
+<meta name="description" content="Precisa de suporte? Conta pra gente aqui que a nossa equipe te responde por e-mail.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body class="has-nav">
 
+<a class="skip-link" href="#formulario">Pular para o formulário</a>
+
 <div id="nav-placeholder"></div>
 
-<main class="home-main">
-  <section class="section" aria-labelledby="chamados-title">
-    <h1 id="chamados-title" class="section__title">Abrir chamado</h1>
-    <p class="section__text">Essa página de suporte geral ainda está em construção. Por enquanto, fale direto com a gente pelo WhatsApp que a equipe te responde por lá.</p>
-    <a class="btn btn--primary btn--full" href="https://wa.me/5511936217656" target="_blank" rel="noopener">Falar no WhatsApp</a>
+<main>
+
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="hero-mandala" src="assets/mandala.svg" alt="" aria-hidden="true">
+    <div class="hero__inner" style="text-align: center;">
+      <span class="eyebrow">Abrir chamado</span>
+      <h1 id="hero-title" class="hero__title" style="margin-left: auto; margin-right: auto;">Precisa de ajuda<br>com alguma coisa?</h1>
+      <p class="hero__subtitle" style="margin-left: auto; margin-right: auto;">Conta pra gente aqui embaixo o que está acontecendo — dúvida, problema, sugestão, qualquer coisa. Sem precisar chamar no WhatsApp.</p>
+    </div>
   </section>
+
+  <!-- FORMULÁRIO -->
+  <section class="section" id="formulario" aria-label="Formulário de chamado">
+    <div class="section__inner">
+      <p style="text-align: center;"><span class="eyebrow" id="formulario-intro">Preencha os dados abaixo</span></p>
+
+      <div id="formulario-wrap">
+      <form class="form-card" id="chamado-form" novalidate>
+
+        <div class="field">
+          <label for="nome">Nome completo *</label>
+          <input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name" required>
+          <span class="field__error" data-error-for="nome"></span>
+        </div>
+
+        <div class="field">
+          <label for="cpf">CPF *</label>
+          <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off" required>
+          <span class="field__error" data-error-for="cpf"></span>
+        </div>
+
+        <div class="field">
+          <label for="cupom">Seu cupom *</label>
+          <input type="text" id="cupom" name="cupom" placeholder="Cupom cadastrado no AURA Creators Club" required>
+          <span class="field__error" data-error-for="cupom"></span>
+        </div>
+
+        <div class="field">
+          <label for="instagram">@ do Instagram *</label>
+          <input type="text" id="instagram" name="instagram" placeholder="@seuinstagram" autocomplete="off" required>
+          <span class="field__error" data-error-for="instagram"></span>
+        </div>
+
+        <fieldset class="field field--fieldset">
+          <legend>Em quais redes você ativa a AURA? *</legend>
+          <div class="checkbox-group">
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="instagram">
+              Instagram
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="tiktok_shop">
+              TikTok Shop
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="shopee">
+              Shopee
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" name="redes" value="youtube">
+              YouTube
+            </label>
+          </div>
+          <span class="field__error" data-error-for="redes"></span>
+        </fieldset>
+
+        <div class="field">
+          <label for="email">E-mail *</label>
+          <input type="email" id="email" name="email" placeholder="seuemail@exemplo.com" autocomplete="email" required>
+          <span class="field__error" data-error-for="email"></span>
+        </div>
+
+        <div class="field">
+          <label for="mensagem">Conta pra gente o que você precisa</label>
+          <textarea id="mensagem" name="mensagem" rows="5" placeholder="Descreva sua dúvida ou o que aconteceu, com o máximo de detalhes possível" required></textarea>
+          <span class="field__error" data-error-for="mensagem"></span>
+        </div>
+
+        <div id="extra-fields-container"></div>
+
+        <div class="field field--hp" aria-hidden="true">
+          <label for="site-extra">Não preencha este campo</label>
+          <input type="text" id="site-extra" name="site-extra" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit" class="btn btn--dark btn--full" id="submit-btn">Enviar chamado</button>
+
+        <p class="form-feedback" id="form-feedback" role="status" aria-live="polite"></p>
+
+      </form>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- FOOTER -->
 <footer class="footer">
   <div class="footer__inner">
-    <img class="logo-aura logo-aura--light" src="assets/aura-logo-negative.png" alt="AURA Beauty" height="22">
-    <p class="footer__contato">Contato/suporte: <a href="https://wa.me/5511936217656" target="_blank" rel="noopener">WhatsApp Influenciadoras (11) 93621-7656</a></p>
+    <img class="logo-aura logo-aura--light logo-aura--footer" src="assets/aura-logo-negative.png" alt="AURA Beauty" width="56" height="26">
+    <div>
+      <p class="footer__texto">Precisa de ajuda ou quer ficar por dentro das novidades? A gente te espera nos nossos grupos.</p>
+      <p class="footer__canais">
+        <a href="https://chat.whatsapp.com/I6Dy4peElV0IxsdkTSI3gW" target="_blank" rel="noopener">Grupo de novidades</a>
+        <span>·</span>
+        <a href="https://chat.whatsapp.com/FoZNPriK67w2ygqH13Shdu" target="_blank" rel="noopener">Grupo de suporte</a>
+      </p>
+    </div>
   </div>
 </footer>
 
 <script src="nav.js"></script>
+<script src="chamados.js"></script>
 </body>
 </html>
