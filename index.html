@@ -19,15 +19,21 @@
   <div class="home-main">
 
     <section class="home-hero" id="status-card" aria-live="polite">
-      <p class="status-card__texto">Carregando…</p>
+      <img class="home-hero__mandala" src="assets/mandala-gold-pattern.png" alt="" aria-hidden="true">
+      <div class="home-hero__inner" id="status-card-inner">
+        <p class="status-card__texto">Carregando…</p>
+      </div>
     </section>
 
     <section aria-labelledby="home-enviar-title">
-      <p class="home-section-label reveal-row" id="home-enviar-title">Enviar conteúdo</p>
+      <div class="home-section-head">
+        <p class="home-section-label reveal-row" id="home-enviar-title">O que você quer fazer?</p>
+      </div>
       <div class="home-action-grid">
         <a href="enviar-conteudo.html" class="home-action-card home-action-card--primary home-action-card--wide reveal-row">
           <i class="ti ti-upload" aria-hidden="true"></i>
           <span>Enviar conteúdo</span>
+          <i class="ti ti-arrow-right home-action-card__arrow" aria-hidden="true"></i>
         </a>
         <a href="chamados.html" class="home-action-card reveal-row">
           <i class="ti ti-message-circle" aria-hidden="true"></i>
@@ -45,28 +51,37 @@
     </section>
 
     <section aria-labelledby="home-passos-title">
-      <p class="home-section-label" id="home-passos-title">Primeiros passos</p>
+      <div class="home-section-head">
+        <p class="home-section-label" id="home-passos-title">Primeiros passos</p>
+      </div>
       <div class="home-passos">
         <div class="home-passo">
-          <span>Guia de pagamentos</span>
+          <div class="home-passo__icon"><i class="ti ti-wallet" aria-hidden="true"></i></div>
+          <span class="home-passo__text">Guia de pagamentos</span>
           <span class="home-passo__em-breve">Em breve</span>
         </div>
         <div class="home-passo">
-          <span>Como usar o app</span>
+          <div class="home-passo__icon"><i class="ti ti-device-mobile" aria-hidden="true"></i></div>
+          <span class="home-passo__text">Como usar o app</span>
           <span class="home-passo__em-breve">Em breve</span>
         </div>
         <div class="home-passo">
-          <span>Sua jornada com a AURA</span>
+          <div class="home-passo__icon"><i class="ti ti-route" aria-hidden="true"></i></div>
+          <span class="home-passo__text">Sua jornada com a AURA</span>
           <span class="home-passo__em-breve">Em breve</span>
         </div>
       </div>
     </section>
 
     <section aria-labelledby="home-comunidade-title">
-      <p class="home-section-label" id="home-comunidade-title">Comunidade</p>
+      <div class="home-section-head">
+        <p class="home-section-label" id="home-comunidade-title">Comunidade</p>
+      </div>
       <div class="home-comunidade">
-        <img src="assets/comunidade-creators.jpg" alt="Creators do AURA Creators Club" width="900" height="599" loading="lazy" style="object-position: center 55%;">
-        <p><strong>Você não está sozinha nessa.</strong>Centenas de creators fazem parte do AURA Creators Club — e esse hub é feito pra elas.</p>
+        <img class="home-comunidade__mandala" src="assets/mandala-gold-pattern.png" alt="" aria-hidden="true">
+        <p class="home-comunidade__title">Você não está sozinha nessa.</p>
+        <p class="home-comunidade__text">Centenas de creators fazem parte do AURA Creators Club — e esse hub é feito pra elas.</p>
+        <a class="home-comunidade__link" href="https://chat.whatsapp.com/I6Dy4peElV0IxsdkTSI3gW" target="_blank" rel="noopener">Entrar no grupo <i class="ti ti-arrow-right" aria-hidden="true"></i></a>
       </div>
     </section>
 

@@ -54,7 +54,7 @@ function animarEntrada() {
 }
 
 function mostrarFormularioIdentificacao() {
-  const card = document.getElementById("status-card");
+  const card = document.getElementById("status-card-inner");
   if (!card) return;
 
   card.innerHTML = `
@@ -99,7 +99,7 @@ async function mostrarIdentificado(cupom) {
 }
 
 function renderizarStatus(cupom, stats) {
-  const card = document.getElementById("status-card");
+  const card = document.getElementById("status-card-inner");
   if (!card) return;
 
   const primeiroNome = (stats.creator_name || "").trim().split(" ")[0] || "";
@@ -114,11 +114,13 @@ function renderizarStatus(cupom, stats) {
       </div>
       <a href="#" id="trocar-cupom" class="status-card__trocar">trocar cupom</a>
     </div>
-    <div class="status-card__numero">
-      <p class="status-card__numero-label">Posts enviados esse mês</p>
-      <p class="status-card__numero-valor" id="status-numero">0</p>
-      <p class="status-card__numero-cupom">cupom ${escapeHtml(cupom.toUpperCase())}</p>
+    <div class="status-card__stats">
+      <div class="status-card__stat">
+        <p class="status-card__stat-valor" id="status-numero">0</p>
+        <p class="status-card__stat-label">Posts enviados esse mês</p>
+      </div>
     </div>
+    <p class="status-card__cupom">cupom ${escapeHtml(cupom.toUpperCase())}</p>
   `;
 
   document.getElementById("trocar-cupom").addEventListener("click", (event) => {
