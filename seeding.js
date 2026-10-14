@@ -32,12 +32,95 @@ const anexosEndpoint = (path) => `${SUPABASE_URL}/storage/v1/object/${ANEXOS_BUC
 let EXTRA_FIELDS = [];
 let SELECTED_IMAGES = []; // [{ file, legenda }]
 
+/* Rótulos do passo 1 do fluxo guiado (camada visual, ver setupFlowSteps).
+   A escolha não é um campo fixo da tabela — vai dentro de campos_extra
+   como "tipo_problema", igual aos campos configuráveis no admin. */
+const ISSUE_LABELS = {
+  endereco_errado: "endereço errado",
+  nao_chegou: "produto que não chegou",
+  veio_trocado: "produto diferente ou trocado",
+  outro: "outro problema",
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
   EXTRA_FIELDS = await fetchSupabaseList(FORM_FIELDS_ENDPOINT);
   renderExtraFields(document.getElementById("extra-fields-container"), EXTRA_FIELDS);
   setupForm();
+  setupFlowSteps();
   document.getElementById("imagens")?.addEventListener("change", handleImagensChange);
 });
+
+/* ---------- FLUXO GUIADO (passo 1 → 2 → 3) ----------
+   Camada visual por cima do MESMO <form> de sempre. Não interfere em
+   validação, upload ou envio — só mostra/esconde seções e expõe
+   window.chamadoFlow pra o handler de submit usar no passo 3. */
+function setupFlowSteps() {
+  const form = document.getElementById("chamado-form");
+  if (!form) return;
+
+  const steps = form.querySelectorAll(".chamado-step");
+  const dots = document.querySelectorAll("[data-step-dot]");
+  const radios = form.querySelectorAll('input[name="tipo_problema_ui"]');
+  const btnToStep2 = document.getElementById("btn-to-step2");
+  const btnToStep1 = document.getElementById("btn-to-step1");
+  const btnTrocar = document.getElementById("btn-trocar-issue");
+  const btnReset = document.getElementById("btn-reset-flow");
+  const issueHint = document.getElementById("issue-hint");
+  const issuePillLabel = document.getElementById("issue-pill-label");
+
+  function selectedIssue() {
+    const checked = form.querySelector('input[name="tipo_problema_ui"]:checked');
+    return checked ? checked.value : null;
+  }
+
+  function goToStep(n) {
+    steps.forEach((s) => {
+      s.classList.toggle("is-visible", s.getAttribute("data-step") === String(n));
+    });
+    dots.forEach((d) => {
+      const dn = Number(d.getAttribute("data-step-dot"));
+      d.classList.toggle("is-active", dn === n);
+      d.classList.toggle("is-done", dn < n);
+    });
+    if (n === 2) {
+      const issue = selectedIssue();
+      if (issuePillLabel) issuePillLabel.textContent = "Sobre: " + (ISSUE_LABELS[issue] || "—");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  radios.forEach((r) => {
+    r.addEventListener("change", () => {
+      if (btnToStep2) btnToStep2.disabled = false;
+      if (issueHint) issueHint.textContent = "";
+    });
+  });
+
+  btnToStep2?.addEventListener("click", () => {
+    if (!selectedIssue()) return;
+    goToStep(2);
+  });
+  btnToStep1?.addEventListener("click", () => goToStep(1));
+  btnTrocar?.addEventListener("click", () => goToStep(1));
+  btnReset?.addEventListener("click", () => {
+    form.reset();
+    resetImagens();
+    clearErrors(form);
+    const feedback = document.getElementById("form-feedback");
+    if (feedback) {
+      feedback.textContent = "";
+      feedback.removeAttribute("data-state");
+    }
+    if (btnToStep2) btnToStep2.disabled = true;
+    goToStep(1);
+  });
+
+  window.chamadoFlow = {
+    goToStep,
+    getSelectedIssue: selectedIssue,
+    issueLabel: () => ISSUE_LABELS[selectedIssue()] || null,
+  };
+}
 
 /* ---------- FETCH GENÉRICO (Supabase REST, somente leitura) ---------- */
 
@@ -257,11 +340,18 @@ function setupForm() {
     if (SELECTED_IMAGES.length > 0) feedback.textContent = "Enviando imagens…";
 
     try {
+      const issueLabel = window.chamadoFlow ? window.chamadoFlow.issueLabel() : null;
       await submitChamado(data);
       form.reset();
       resetImagens();
-      feedback.textContent = "Chamado recebido! Você vai receber uma cópia do que escreveu por e-mail, e a nossa resposta chega no mesmo endereço assim que o time conferir.";
-      feedback.dataset.state = "success";
+      feedback.textContent = "";
+      feedback.removeAttribute("data-state");
+
+      const confirmMessage = document.getElementById("confirm-message");
+      if (confirmMessage) {
+        confirmMessage.textContent = `Recebemos sua mensagem sobre ${issueLabel || "o seu seeding"}. Você vai receber uma cópia do que escreveu por e-mail, e a nossa resposta chega no mesmo endereço assim que o time conferir.`;
+      }
+      if (window.chamadoFlow) window.chamadoFlow.goToStep(3);
     } catch (err) {
       feedback.textContent = "Algo não saiu como esperado. Tenta enviar de novo em alguns instantes.";
       feedback.dataset.state = "error";
@@ -361,7 +451,11 @@ function buildPayload(data, id, anexos) {
     email: data.email,
     mensagem: data.mensagem,
     anexos: anexos || [],
-    campos_extra: { ...getExtraFieldsData(EXTRA_FIELDS), _hp: getHoneypotValue() },
+    campos_extra: {
+      ...getExtraFieldsData(EXTRA_FIELDS),
+      tipo_problema: window.chamadoFlow ? window.chamadoFlow.getSelectedIssue() : null,
+      _hp: getHoneypotValue(),
+    },
   };
 }
 

@@ -552,6 +552,102 @@ body.has-nav { padding-bottom: 68px; }
 }
 .imagens-preview__remove:hover { opacity: 1; }
 
+/* ---------- FLUXO GUIADO (seeding.html / chamados.html) ----------
+   Camada visual por cima do MESMO <form> de sempre: passo 1 escolhe
+   uma categoria (cards, só pra UX — vai pra campos_extra.tipo_problema),
+   passo 2 é o formulário real (campos/nomes inalterados), passo 3 é a
+   confirmação. Não muda nada da integração com Supabase. */
+.chamado-flow__progress {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.chamado-flow__step-dot { display: flex; align-items: center; gap: 8px; }
+.chamado-flow__step-dot .dot {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  border: 1.5px solid var(--placeholder-gray);
+  color: var(--brown); opacity: 0.45;
+  transition: background .15s, border-color .15s, opacity .15s, color .15s;
+}
+.chamado-flow__step-dot .lbl {
+  font-size: 12.5px; font-weight: 600; color: var(--brown); opacity: 0.45;
+  transition: opacity .15s;
+}
+.chamado-flow__step-dot.is-active .dot,
+.chamado-flow__step-dot.is-done .dot {
+  background: var(--gold); border-color: var(--gold); color: var(--white); opacity: 1;
+}
+.chamado-flow__step-dot.is-active .lbl,
+.chamado-flow__step-dot.is-done .lbl { opacity: 1; }
+
+.chamado-step { display: none; }
+.chamado-step.is-visible { display: flex; flex-direction: column; gap: 16px; }
+
+/* passo 1 — cards de categoria */
+.issue-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0; padding: 0; border: none;
+}
+.issue-grid legend { position: absolute; left: -9999px; }
+.issue-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--placeholder-gray);
+  background: var(--white);
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.issue-card input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.issue-card svg { width: 24px; height: 24px; color: var(--gold); }
+.issue-card span { font-size: 14px; font-weight: 700; color: var(--brown); }
+.issue-card:has(input:checked) { border: 2px solid var(--gold); background: var(--offwhite); }
+.issue-card:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.chamado-flow__hint { font-size: 12.5px; color: var(--brown); opacity: 0.6; margin: 0; min-height: 16px; }
+
+/* passo 2 — pílula de contexto */
+.issue-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  background: var(--offwhite);
+  color: var(--brown);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.issue-pill button {
+  background: none; border: none; padding: 0;
+  font-size: 11.5px; font-weight: 700; color: var(--gold);
+  text-decoration: underline; cursor: pointer;
+}
+
+.chamado-step__actions { display: flex; gap: 14px; align-items: center; }
+.chamado-step__actions .btn--dark { flex: 1; }
+
+/* passo 3 — confirmação */
+.chamado-flow__confirm { text-align: center; padding: 20px 10px 4px; }
+.chamado-flow__confirm svg { margin: 0 auto 18px; display: block; }
+.chamado-flow__confirm h2 { margin: 0 0 10px; font-size: 21px; }
+.chamado-flow__confirm p { margin: 0 auto 22px; max-width: 420px; font-size: 14px; color: var(--brown); line-height: 1.6; }
+
+@media (max-width: 560px) {
+  .issue-grid { grid-template-columns: 1fr; }
+  .chamado-flow__progress { gap: 14px; }
+}
 
 /* ---------- PÁGINA ADMIN (/admin.html) ---------- */
 .admin-body { background: var(--offwhite); min-height: 100vh; }
