@@ -972,7 +972,8 @@ body.has-nav { padding-bottom: 68px; }
 .home-hero__inner { position: relative; z-index: 1; max-width: var(--max-width-desktop); margin: 0 auto; }
 
 .status-card__kicker { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tan); margin-bottom: 6px; }
-.status-card__texto { font-size: 14px; color: var(--cream); margin-bottom: 14px; }
+.status-card__titulo { font-size: 19px; font-weight: 800; color: var(--cream); margin-bottom: 10px; }
+.status-card__texto { font-size: 13.5px; line-height: 1.6; color: var(--tan); margin-bottom: 18px; opacity: 0.95; }
 .status-card__form { display: flex; gap: 8px; }
 .status-card__form input {
   flex: 1;
@@ -982,6 +983,7 @@ body.has-nav { padding-bottom: 68px; }
   font-family: var(--font);
   font-size: 14px;
 }
+.status-card__reassure { margin-top: 10px; font-size: 11.5px; line-height: 1.5; color: var(--tan); opacity: 0.85; }
 .status-card__erro { margin-top: 10px; font-size: 12px; color: #f8d7d7; }
 .status-card__topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .status-card__ola { font-size: 12px; color: var(--tan); margin-bottom: 2px; }

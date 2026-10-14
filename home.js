@@ -59,11 +59,13 @@ function mostrarFormularioIdentificacao() {
 
   card.innerHTML = `
     <p class="status-card__kicker">Primeira vez por aqui?</p>
-    <p class="status-card__texto">Digite o seu cupom pra gente personalizar sua página.</p>
+    <p class="status-card__titulo">Esse é o seu hub, Creator.</p>
+    <p class="status-card__texto">Aqui você envia conteúdo, resolve problema de seeding, manda vídeo pra impulsionar e fala com a gente — tudo num lugar só, sem precisar ficar perguntando no WhatsApp.</p>
     <form id="identificacao-form" class="status-card__form">
       <input type="text" id="identificacao-cupom" placeholder="Seu cupom" autocomplete="off" required>
       <button type="submit" class="btn btn--primary">Entrar</button>
     </form>
+    <p class="status-card__reassure">É o mesmo cupom que você já usa nas suas vendas — não cria senha nova.</p>
     <p class="status-card__erro" id="identificacao-erro" hidden>Não encontramos esse cupom. Confere e tenta de novo.</p>
   `;
 
