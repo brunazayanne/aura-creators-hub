@@ -1,7 +1,7 @@
 /* ============================================
    AURA Creators Club — Vídeo Impulsionado
    Duplicata do Content Hub, dedicada a vídeos brutos
-   (arquivo, não post publicado) que a AURA pode usar
+   (arquivo, não post publicado) que AURA pode usar
    como anúncio impulsionado.
 
    Diferenças em relação ao script.js do hub principal:
