@@ -1073,36 +1073,77 @@ body.has-nav { padding-bottom: 68px; }
 .home-comunidade__link:hover { text-decoration: underline; }
 
 .home-grupos { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; }
+
+/* Card do grupo de WhatsApp: exceção proposital à paleta institucional.
+   Usa o verde oficial do WhatsApp (#25D366) e o ícone oficial do app,
+   decisão da Bruna pra dar "cara de convite de WhatsApp de verdade"
+   (opção C da proposta). Não usar esse verde em mais nenhum componente. */
 .home-grupo-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  position: relative;
   background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  text-decoration: none;
-  color: var(--brown);
-  box-shadow: 0 2px 10px rgba(76, 35, 23, 0.05);
-  transition: transform 0.1s ease;
+  border-radius: 18px;
+  padding: 18px 16px 16px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(76, 35, 23, 0.08);
 }
-.home-grupo-card:active { transform: scale(0.98); }
-.home-grupo-card__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--tan);
-  color: var(--gold);
+.home-grupo-card__avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  background: #25d366;
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  position: relative;
 }
-.home-grupo-card__icon svg { width: 18px; height: 18px; }
-.home-grupo-card__texto { flex: 1; min-width: 0; }
-.home-grupo-card__nome { font-size: 13px; font-weight: 700; margin: 0; }
-.home-grupo-card__desc { font-size: 11px; opacity: 0.65; margin: 2px 0 0; }
-.home-grupo-card__seta { flex-shrink: 0; width: 16px; height: 16px; color: var(--gold); }
-.home-grupo-card__seta svg { width: 100%; height: 100%; }
+.home-grupo-card__avatar svg { width: 26px; height: 26px; }
+.home-grupo-card__bolha {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #25d366;
+  border: 2px solid var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+}
+.home-grupo-card__bolha svg { width: 11px; height: 11px; }
+.home-grupo-card__nome { font-size: 15px; font-weight: 800; margin: 0 0 4px; color: var(--brown); }
+.home-grupo-card__selo {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #128c7e;
+  background: rgba(37, 211, 102, 0.14);
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin: 0 0 8px;
+}
+.home-grupo-card__desc { font-size: 12px; opacity: 0.7; line-height: 1.5; margin: 0 0 14px; color: var(--brown); }
+.home-grupo-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #25d366;
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+.home-grupo-card__cta svg { width: 14px; height: 14px; }
+.home-grupo-card__cta:hover { opacity: 0.9; }
+.home-grupo-card__cta:active { transform: scale(0.98); }
 
 @media (min-width: 900px) {
   .home-main { padding: 32px var(--gutter-desktop) 60px; }
