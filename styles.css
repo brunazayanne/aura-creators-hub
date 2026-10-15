@@ -1002,7 +1002,7 @@ body.has-nav { padding-bottom: 68px; }
 .status-card__stat-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tan); }
 .status-card__cupom { font-size: 11px; color: var(--tan); opacity: 0.85; margin-top: 14px; }
 
-.home-section-head { margin-bottom: 12px; }
+.home-section-head { margin-bottom: 12px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .home-section-label {
   display: inline-block;
   font-size: 11px;
@@ -1014,6 +1014,7 @@ body.has-nav { padding-bottom: 68px; }
   padding: 5px 12px;
   border-radius: 20px;
 }
+.home-section-sub { font-size: 11px; color: var(--brown); opacity: 0.55; white-space: nowrap; }
 
 .home-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; }
 .home-action-card {
@@ -1045,42 +1046,6 @@ body.has-nav { padding-bottom: 68px; }
 .home-action-card--primary .ti-icon { color: var(--golden); margin-bottom: 0; font-size: 24px; }
 .home-action-card--primary span { font-size: 16px; flex: 1; }
 .home-action-card--primary .home-action-card__arrow.ti-icon { color: var(--tan); font-size: 16px; flex-shrink: 0; margin-bottom: 0; }
-
-.home-passos { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-.home-passo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--white);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  font-size: 13px;
-  color: var(--brown);
-  box-shadow: 0 2px 10px rgba(76, 35, 23, 0.05);
-}
-.home-passo__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--tan);
-  color: var(--gold);
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.home-passo__text { flex: 1; font-weight: 600; }
-.home-passo__em-breve {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--gold);
-  background: var(--tan);
-  padding: 4px 9px;
-  border-radius: 20px;
-}
 
 .home-comunidade {
   position: relative;
@@ -1198,10 +1163,76 @@ body.has-nav { padding-bottom: 68px; }
 /* ============================================
    GUIAS AURA (páginas de guia na Home)
    ============================================ */
-.home-passo--link { text-decoration: none; color: var(--brown); transition: transform 0.1s ease; }
-.home-passo--link:active { transform: scale(0.98); }
-.home-passo__seta { flex-shrink: 0; width: 16px; height: 16px; color: var(--gold); }
-.home-passo__seta svg { width: 100%; height: 100%; }
+/* Carrossel horizontal de guias estilo Netflix (Home) */
+.guias-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 2px 20px 14px;
+  margin: 0 -20px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+.guias-row::-webkit-scrollbar { display: none; }
+.guia-card {
+  scroll-snap-align: start;
+  flex: 0 0 128px;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(76, 35, 23, 0.08);
+  padding: 14px 12px 12px;
+  text-decoration: none;
+  color: var(--brown);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  transition: transform 0.1s ease;
+}
+a.guia-card:active { transform: scale(0.98); }
+.guia-card--destaque {
+  flex-basis: 168px;
+  background: linear-gradient(160deg, var(--brown) 0%, #3a1a10 100%);
+  color: var(--cream);
+  box-shadow: 0 6px 18px rgba(76, 35, 23, 0.3);
+}
+.guia-card--em-breve { opacity: 0.68; }
+.guia-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--tan);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.guia-card--destaque .guia-card__icon { background: rgba(251, 247, 242, 0.15); color: var(--golden); }
+.guia-card__icon svg { width: 20px; height: 20px; }
+.guia-card__tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--golden);
+  color: var(--brown);
+  padding: 3px 7px;
+  border-radius: 20px;
+}
+.guia-card__tag--em-breve { background: var(--tan); color: var(--gold); }
+.guia-card__title { font-size: 12.5px; font-weight: 700; line-height: 1.3; margin: 0; }
+.guia-card--destaque .guia-card__title { font-size: 13.5px; }
+.guia-card__sub { font-size: 10.5px; opacity: 0.65; line-height: 1.4; margin: 0; }
+
+@media (min-width: 900px) {
+  .guias-row { margin: 0 calc(var(--gutter-desktop) * -1) 32px; padding: 2px var(--gutter-desktop) 16px; gap: 16px; }
+  .guia-card { flex-basis: 160px; padding: 18px 16px 16px; }
+  .guia-card--destaque { flex-basis: 210px; }
+}
 
 .guia-head { position: relative; background: linear-gradient(135deg, var(--gold) 0%, #8c4a1d 100%); overflow: hidden; text-align: center; }
 .guia-head__mandala { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 78% 50%; opacity: 0.55; pointer-events: none; }

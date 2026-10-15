@@ -961,7 +961,7 @@ function chamadoRowHtml(c) {
           ${handle ? ` · @${escapeHtml(handle)}` : ""}
           ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
         </p>
-        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
+        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         ${camposExtraHtml(c.campos_extra)}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
         ${anexosHtml(c.anexos)}
@@ -1122,7 +1122,7 @@ function chamadoGeralRowHtml(c) {
           ${handle ? ` · @${escapeHtml(handle)}` : ""}
           ${recebidoEm ? ` · recebido em ${escapeHtml(recebidoEm)}` : ""}
         </p>
-        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa a AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
+        ${redesTexto ? `<p style="font-size:12px;opacity:.75;">Ativa AURA em: ${escapeHtml(redesTexto)}</p>` : ""}
         ${camposExtraHtml(c.campos_extra)}
         <p style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(c.mensagem || "")}</p>
         ${anexosHtml(c.anexos)}
