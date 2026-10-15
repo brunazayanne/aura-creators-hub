@@ -84,7 +84,7 @@ function setupFlowSteps() {
     });
     if (n === 2) {
       const issue = selectedIssue();
-      if (issuePillLabel) issuePillLabel.textContent = "Sobre: " + (ISSUE_LABELS[issue] || "—");
+      if (issuePillLabel) issuePillLabel.textContent = "Sobre: " + (ISSUE_LABELS[issue] || "-");
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -247,7 +247,7 @@ function handleImagensChange(event) {
   });
 
   if (validos.length > ANEXOS_MAX_COUNT) {
-    avisos.push(`Só dá pra anexar até ${ANEXOS_MAX_COUNT} imagens — as primeiras ${ANEXOS_MAX_COUNT} foram mantidas.`);
+    avisos.push(`Só dá pra anexar até ${ANEXOS_MAX_COUNT} imagens, as primeiras ${ANEXOS_MAX_COUNT} foram mantidas.`);
     validos = validos.slice(0, ANEXOS_MAX_COUNT);
   }
 

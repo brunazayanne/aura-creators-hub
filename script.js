@@ -280,7 +280,7 @@ function setupForm() {
 
       const total = await countSubmissionsByCupom(data.codigo);
       feedback.textContent = total
-        ? `Recebemos seu conteúdo — esse já é o seu ${total}º envio! Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado. Pode mandar mais quando quiser.`
+        ? `Recebemos seu conteúdo. Esse já é o seu ${total}º envio! Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado. Pode mandar mais quando quiser.`
         : "Recebemos seu conteúdo. Nosso time confere tudo e, se precisar de algum ajuste, chama você no WhatsApp informado. Pode mandar mais quando quiser.";
       feedback.dataset.state = "success";
     } catch (err) {

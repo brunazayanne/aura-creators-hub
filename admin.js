@@ -214,7 +214,7 @@ function renderFormFieldsList(formulario, fields, errorMsg) {
     .map(
       (f, idx) => `
         <div class="admin-row" data-id="${f.id}">
-          <span>${escapeHtml(f.label)}${f.obrigatorio ? " <strong>*</strong>" : ""} — <span style="opacity:.7;">${escapeHtml(FORM_FIELD_TIPOS[f.tipo] || f.tipo)}</span>${f.ativo ? "" : " (inativo)"}</span>
+          <span>${escapeHtml(f.label)}${f.obrigatorio ? " <strong>*</strong>" : ""}: <span style="opacity:.7;">${escapeHtml(FORM_FIELD_TIPOS[f.tipo] || f.tipo)}</span>${f.ativo ? "" : " (inativo)"}</span>
           <div class="admin-row__actions">
             <button type="button" data-action="cf-up" ${idx === 0 ? "disabled" : ""}>&uarr;</button>
             <button type="button" data-action="cf-down" ${idx === fields.length - 1 ? "disabled" : ""}>&darr;</button>
@@ -796,7 +796,7 @@ function renderSubmissoes() {
       return `
         <div class="admin-row admin-row--submissao" data-id="${s.id}">
           <div class="admin-submissao__info">
-            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong> ${handle ? `— @${escapeHtml(handle)}` : ""} ${statusTag} ${briefingTag}</p>
+            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong> ${handle ? `(@${escapeHtml(handle)})` : ""} ${statusTag} ${briefingTag}</p>
             <p style="font-size:12px;opacity:.75;">
               ${escapeHtml(s.content_platform || "")} · ${escapeHtml(consentTag)}
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver conteúdo</a>` : ""}
@@ -955,7 +955,7 @@ function chamadoRowHtml(c) {
   return `
     <div class="admin-row admin-row--submissao" data-id="${c.id}">
       <div class="admin-submissao__info">
-        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
+        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong>, cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
         <p style="font-size:12px;opacity:.75;">
           ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
           ${handle ? ` · @${escapeHtml(handle)}` : ""}
@@ -1116,7 +1116,7 @@ function chamadoGeralRowHtml(c) {
   return `
     <div class="admin-row admin-row--submissao" data-id="${c.id}">
       <div class="admin-submissao__info">
-        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong> — cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
+        <p><strong>${escapeHtml(c.nome || "Sem nome")}</strong>, cupom <strong>${escapeHtml(c.cupom || "não informado")}</strong> ${statusTag}</p>
         <p style="font-size:12px;opacity:.75;">
           ${escapeHtml(c.email || "")}${c.cpf ? ` · CPF ${escapeHtml(c.cpf)}` : ""}
           ${handle ? ` · @${escapeHtml(handle)}` : ""}
@@ -1360,7 +1360,7 @@ function renderRelatorioRanking(el, submissions) {
     .map(
       ([cupom, info], index) => `
       <div class="admin-row admin-row--metric">
-        <span>${index + 1}. ${escapeHtml(info.nome || "Sem nome")} — <strong>${escapeHtml(cupom)}</strong></span>
+        <span>${index + 1}. ${escapeHtml(info.nome || "Sem nome")}: <strong>${escapeHtml(cupom)}</strong></span>
         <span class="admin-row__metric-value">${info.count}</span>
       </div>
     `
@@ -1448,7 +1448,7 @@ function renderVIList() {
       return `
         <div class="admin-row admin-row--submissao" data-id="${s.id}">
           <div class="admin-submissao__info">
-            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong>${s.coupon_code ? ` — cupom <strong>${escapeHtml(s.coupon_code)}</strong>` : ""} ${statusTag}</p>
+            <p><strong>${escapeHtml(s.creator_name || "Sem nome")}</strong>${s.coupon_code ? `, cupom <strong>${escapeHtml(s.coupon_code)}</strong>` : ""} ${statusTag}</p>
             <p style="font-size:12px;opacity:.75;">
               ${escapeHtml(produtoLabel)}
               ${s.content_url ? ` · <a href="${encodeURI(s.content_url)}" target="_blank" rel="noopener">Ver vídeo no Drive</a>` : ""}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA Creators Club: Guia de produtos</title>
+<meta name="description" content="Personalidade, perfil olfativo e dica de uso de cada produto AURA, pra você falar com segurança sobre o que está indicando.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="has-nav">
+
+<div id="nav-placeholder"></div>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero hero--produtos" aria-labelledby="hero-title">
+    <div class="hero__inner">
+      <div class="hero__content">
+        <a class="hero__back" href="index.html#home-passos-title">‹ Voltar pros guias</a>
+        <span class="eyebrow">Guia de produtos</span>
+        <h1 id="hero-title" class="hero__title">Pra cada Deusa, uma personalidade. Pra cada produto, uma história.</h1>
+        <p class="hero__subtitle">Aqui está o que você precisa saber sobre cada produto AURA: personalidade, perfil olfativo e dica de uso, pra você falar com segurança sobre o que está indicando, sem precisar decorar nada.</p>
+      </div>
+      <img class="hero__img" src="assets/produtos/aura-edt.png" alt="Frasco do AURA EDT">
+    </div>
+  </section>
+
+  <!-- FILTROS -->
+  <nav class="produtos-filtros" aria-label="Filtrar por categoria">
+    <button type="button" class="produtos-pill" data-filtro="todas" aria-pressed="true">Todas</button>
+    <button type="button" class="produtos-pill" data-filtro="deusas" aria-pressed="false">Deusas</button>
+    <button type="button" class="produtos-pill" data-filtro="signature" aria-pressed="false">AURA Signature</button>
+    <button type="button" class="produtos-pill" data-filtro="musas" aria-pressed="false">Musas de AURA</button>
+    <button type="button" class="produtos-pill" data-filtro="tratamentos" aria-pressed="false">Tratamentos & Glow</button>
+    <button type="button" class="produtos-pill" data-filtro="kits" aria-pressed="false">Kits presenteáveis</button>
+  </nav>
+
+  <!-- DEUSAS -->
+  <section class="section produtos-secao" data-categoria="deusas" aria-labelledby="deusas-title">
+    <div class="section__inner">
+      <h2 id="deusas-title" class="section__title">Deusas: Body Splash & Body Lotion</h2>
+      <p class="section__text">Sete fragrâncias, sete personalidades. Cada Deusa tem body splash (200ml) e body lotion na mesma fragrância.</p>
+
+      <div class="produto-grid">
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/radiant-hera-splash.png" alt="Body Splash Radiant Hera">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#E8D4AE;"></span>
+            <p class="produto-card__nome">Radiant Hera</p>
+          </div>
+          <p class="produto-card__persona">Acolhedora e magnética: a força de quem cuida de si pra cuidar dos outros.</p>
+          <p class="produto-card__perfil">Floral frutal baunilha</p>
+          <p class="produto-card__notas">Framboesa, amêndoa, pêssego, caramelo e baunilha.</p>
+          <p class="produto-card__extra">Tem Body Lotion e Manteiga Iluminadora na mesma fragrância.</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/afrodite-garden-splash.png" alt="Body Splash Afrodite Garden">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#63BDAF;"></span>
+            <p class="produto-card__nome">Afrodite Garden</p>
+          </div>
+          <span class="produto-card__premio">Melhor Body Splash 2025, Prêmio Glamour</span>
+          <p class="produto-card__persona">Sensual e elegante: a deusa do amor-próprio e da beleza única.</p>
+          <p class="produto-card__perfil">Floral fougère baunilha</p>
+          <p class="produto-card__notas">Flor de laranjeira, jasmim, heliotropina, baunilha e leite.</p>
+          <p class="produto-card__extra">Tem Body Lotion, Manteiga, Body Místico, Duo de Óleos e a versão Secret (Afrodite Secret Garden).</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/diana-glam-splash.png" alt="Body Splash Diana Glam">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#F2DC78;"></span>
+            <p class="produto-card__nome">Diana Glam</p>
+          </div>
+          <p class="produto-card__persona">Instintiva, independente e livre: a caçadora da luz.</p>
+          <p class="produto-card__perfil">Floral aquático gourmand</p>
+          <p class="produto-card__notas">Água de coco, banana, flores brancas, ylang e baunilha.</p>
+          <p class="produto-card__extra">Tem Body Lotion na mesma fragrância.</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/aurora-shine-splash.png" alt="Body Splash Aurora Shine">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#EBB4BB;"></span>
+            <p class="produto-card__nome">Aurora Shine</p>
+          </div>
+          <p class="produto-card__persona">Luminosa e enigmática: a deusa do recomeço e das novas oportunidades.</p>
+          <p class="produto-card__perfil">Oriental floral musk</p>
+          <p class="produto-card__notas">Flores brancas, pera, maçã, madeiras, baunilha e musk.</p>
+          <p class="produto-card__extra">Tem Body Lotion, Manteiga, Geleia Radiante Iluminadora e a versão Secret (Aurora Secret Shine).</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/venus-love-splash.png" alt="Body Splash Venus Love">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#D94D55;"></span>
+            <p class="produto-card__nome">Venus Love</p>
+          </div>
+          <p class="produto-card__persona">Espontânea, provocante e dona de si: amor-próprio com coragem.</p>
+          <p class="produto-card__perfil">Frutal gourmand</p>
+          <p class="produto-card__notas">Chocolate branco, caramelo, avelã, tonka e baunilha.</p>
+          <p class="produto-card__extra">Tem Body Lotion e Body Místico na mesma fragrância.</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/athena-glow-splash.png" alt="Body Splash Athena Glow">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#939BC9;"></span>
+            <p class="produto-card__nome">Athena Glow</p>
+          </div>
+          <p class="produto-card__persona">Estratégica e intuitiva: a sabedoria que brilha de dentro pra fora.</p>
+          <p class="produto-card__perfil">Gourmand floral</p>
+          <p class="produto-card__notas">Mandarina, groselha preta, jasmim, caramelo e notas de leite.</p>
+          <p class="produto-card__extra">Tem Body Lotion e a versão Secret (Athena Secret Glow).</p>
+        </article>
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/afrodite-petals-splash.png" alt="Body Splash Afrodite Petals">
+          <div class="produto-card__topo">
+            <span class="produto-card__dot" style="background:#F69F8B;"></span>
+            <p class="produto-card__nome">Afrodite Petals</p>
+          </div>
+          <p class="produto-card__persona">Fresca e delicada: a faceta de Afrodite que desperta ao amanhecer.</p>
+          <p class="produto-card__perfil">Floral rosa musk</p>
+          <p class="produto-card__notas">Pimenta rosa, rosa damascena, tuberosa, baunilha e musk.</p>
+          <p class="produto-card__extra">Tem Body Lotion na mesma fragrância.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- AURA SIGNATURE -->
+  <section class="section section--muted produtos-secao" data-categoria="signature" aria-labelledby="signature-title">
+    <div class="section__inner">
+      <h2 id="signature-title" class="section__title">AURA Signature: EDT & Secrets</h2>
+      <p class="section__text">A perfumaria fina da marca: o Eau de Toilette assinatura e as versões mais concentradas das Deusas.</p>
+
+      <div class="produto-destaque">
+        <img class="produto-destaque__img" src="assets/produtos/aura-edt.png" alt="Frasco do AURA EDT">
+        <div class="produto-destaque__conteudo">
+          <p class="produto-destaque__cat">Eau de Toilette · 100ml</p>
+          <p class="produto-destaque__nome">AURA EDT</p>
+          <p class="produto-destaque__texto">A assinatura da marca, acima das Deusas. O próprio Olimpo: poderoso, feminino e muito floral.</p>
+          <p class="produto-destaque__perfil">Oriental floral ambarado</p>
+          <p class="produto-destaque__notas">Framboesa, heliotropina, orquídea, lírio do vale, âmbar, baunilha, sândalo e tonka.</p>
+          <p class="produto-destaque__lancamento">Lançado por Jade Picon na Beauty Fair, no aniversário de 1 ano da marca. Favorito do Público no Prêmio Glamour de Beleza 2026.</p>
+        </div>
+      </div>
+
+      <div class="produto-grid">
+
+        <article class="produto-card">
+          <img class="produto-card__img" src="assets/produtos/afrodite-secret-garden.png" alt="Afrodite Secret Garden">
+          <p class="produto-card__nome">Afrodite Secret Garden</p>
+          <p class="produto-card__perfil">Floral gourmand</p>
+          <p class="produto-card__notas">Laranja sanguínea, mandarina, frésia, manga, osmanthus, pêssego, musk, baunilha e acorde de leite.</p>
+          <p class="produto-card__extra">A versão mais concentrada de Afrodite Garden: mais perfume, mais fixação. Eau de Toilette, 50ml.</p>
+        </article>
+
+        <article class="produto-card produto-card--segredo">
+          <div class="produto-card__img-wrap">
+            <img class="produto-card__img" src="assets/produtos/aurora-secret-shine.png" alt="Aurora Secret Shine (lançamento ainda não revelado)">
+            <span class="produto-card__segredo-badge">Em breve</span>
+            <svg class="produto-card__segredo-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/><path d="M8 11v-4a4 4 0 1 1 8 0v4"/></svg>
+          </div>
+          <p class="produto-card__nome">Aurora Secret Shine</p>
+          <p class="produto-card__perfil">Floral ambarado</p>
+          <p class="produto-card__notas produto-card__notas--segredo">Ainda é segredo... assim que puder contar, conto aqui primeiro.</p>
+          <p class="produto-card__extra">A versão mais concentrada de Aurora Shine. Eau de Toilette, 50ml.</p>
+        </article>
+
+        <article class="produto-card produto-card--segredo">
+          <div class="produto-card__img-wrap">
+            <img class="produto-card__img" src="assets/produtos/athena-secret-glow.png" alt="Athena Secret Glow (lançamento ainda não revelado)">
+            <span class="produto-card__segredo-badge">Em breve</span>
+            <svg class="produto-card__segredo-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/><path d="M8 11v-4a4 4 0 1 1 8 0v4"/></svg>
+          </div>
+          <p class="produto-card__nome">Athena Secret Glow</p>
+          <p class="produto-card__perfil">Ambarado aromático floral</p>
+          <p class="produto-card__notas produto-card__notas--segredo">Ainda é segredo... assim que puder contar, conto aqui primeiro.</p>
+          <p class="produto-card__extra">A versão mais concentrada de Athena Glow. Eau de Toilette, 50ml.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- MUSAS DE AURA -->
+  <section class="section produtos-secao" data-categoria="musas" aria-labelledby="musas-title">
+    <div class="section__inner">
+      <h2 id="musas-title" class="section__title">Musas de AURA</h2>
+      <p class="section__text">A linha jovem e colecionável: body splash (90ml) e lipgloss (10g) em embalagem cravejada, uma fruta-assinatura por Musa.</p>
+
+      <div class="produto-grid">
+
+        <article class="musa-card" style="background:#753CBA;">
+          <img class="musa-card__img" src="assets/produtos/musa-nyx.png" alt="Musa Nyx, sabor Cereja">
+          <p class="musa-card__nome">Nyx · Cereja</p>
+          <p class="musa-card__persona">A Musa Cool: mistério com atitude. Lembra que ser diferente é o que te faz inesquecível.</p>
+          <p class="musa-card__perfil">Frutado floral gourmand</p>
+          <p class="musa-card__notas">Cereja, mandarina, maçã, pimenta rosa, rosa, pêssego e framboesa.</p>
+          <p class="musa-card__gloss">Lipgloss no sabor cereja, muguet e sândalo.</p>
+        </article>
+
+        <article class="musa-card" style="background:#FC7E2F;">
+          <img class="musa-card__img" src="assets/produtos/musa-serena.png" alt="Musa Serena, sabor Manga">
+          <p class="musa-card__nome">Serena · Manga</p>
+          <p class="musa-card__persona">A Musa Good Vibes: sol em forma de energia, espalha alegria e leveza.</p>
+          <p class="musa-card__perfil">Floral frutal baunilha</p>
+          <p class="musa-card__notas">Manga, laranja sanguínea, limão, morango, rosa, pêssego e maracujá.</p>
+          <p class="musa-card__gloss">Lipgloss no sabor manga, rosa e âmbar.</p>
+        </article>
+
+        <article class="musa-card" style="background:#EC3FA8;">
+          <img class="musa-card__img" src="assets/produtos/musa-chloe.png" alt="Musa Chloe, sabor Goiaba">
+          <p class="musa-card__nome">Chloe · Goiaba</p>
+          <p class="musa-card__persona">A Musa Fresh: movimento, liberdade e natureza viva, ama rir alto e viver intensamente.</p>
+          <p class="musa-card__perfil">Frutado floral</p>
+          <p class="musa-card__notas">Goiaba, framboesa, bergamota, maçã, jasmim, pêssego e manga.</p>
+          <p class="musa-card__gloss">Lipgloss no sabor goiaba, jasmim e musk.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TRATAMENTOS & GLOW -->
+  <section class="section section--muted produtos-secao" data-categoria="tratamentos" aria-labelledby="tratamentos-title">
+    <div class="section__inner">
+      <h2 id="tratamentos-title" class="section__title">Tratamentos & Glow</h2>
+      <p class="section__text">Hidratação, iluminação e preparo de pele: os produtos que completam o ritual das Deusas.</p>
+
+      <div class="produto-grid">
+
+        <article class="tratamento-card">
+          <img class="tratamento-card__img" src="assets/produtos/magic-butter.png" alt="Magic Butter, manteiga iluminadora">
+          <p class="tratamento-card__nome">Magic Butter</p>
+          <p class="tratamento-card__desc">Manteiga iluminadora, 200g. Hidratação intensa com manteiga de karité e vitamina E, toque acetinado e partículas iluminadoras.</p>
+          <p class="tratamento-card__disp">Disponível em: Afrodite Garden, Aurora Shine e Radiant Hera</p>
+          <p class="tratamento-card__dica">💡 Use antes do body splash: fixa muito mais a fragrância.</p>
+        </article>
+
+        <article class="tratamento-card">
+          <img class="tratamento-card__img" src="assets/produtos/body-mistico.png" alt="Body Místico, spray iluminador">
+          <p class="tratamento-card__nome">Body Místico</p>
+          <p class="tratamento-card__desc">Spray iluminador pra rosto, corpo e cabelo, 100ml. Bruma leve e fresca, rica em oligoelementos, sem álcool.</p>
+          <p class="tratamento-card__disp">Disponível em: Afrodite Garden e Venus Love</p>
+          <p class="tratamento-card__dica">💡 Funciona como hair mist: nutre, ilumina e perfuma o cabelo sem ressecar.</p>
+        </article>
+
+        <article class="tratamento-card">
+          <img class="tratamento-card__img" src="assets/produtos/duo-de-oleos.png" alt="Duo de Óleos Multifenomenais">
+          <p class="tratamento-card__nome">Duo de Óleos Multifenomenais</p>
+          <p class="tratamento-card__desc">Dupla de óleos iluminadores multifuncionais, 30ml cada: dourado (Golden Hour) e prateado (Silver Moon). Enriquecido com vitamina E, livre de microplásticos.</p>
+          <p class="tratamento-card__disp">Disponível em: fragrância Afrodite Garden</p>
+          <p class="tratamento-card__dica">💡 Misture dourado e prateado pra customizar seu brilho: dourado pro dia, prateado pra noite.</p>
+        </article>
+
+        <article class="tratamento-card">
+          <img class="tratamento-card__img" src="assets/produtos/geleia-radiante.png" alt="Geleia Radiante Iluminadora">
+          <p class="tratamento-card__nome">Geleia Radiante Iluminadora</p>
+          <p class="tratamento-card__desc">Gel refrescante com mica dourada, 200g. Dá brilho sem transferir pra roupa.</p>
+          <p class="tratamento-card__disp">Disponível em: fragrância Aurora Shine</p>
+          <p class="tratamento-card__dica">💡 Guarde na geladeira: o efeito gelado é a assinatura do verão AURA.</p>
+        </article>
+
+        <article class="tratamento-card">
+          <img class="tratamento-card__img" src="assets/produtos/primer-acetinado.png" alt="Gotas Iluminadas, Primer Acetinado">
+          <p class="tratamento-card__nome">Gotas Iluminadas: Primer Acetinado</p>
+          <p class="tratamento-card__desc">Primer com acabamento perolado, niacinamida e ácido hialurônico. Prepara a pele pra make ou funciona sozinho.</p>
+          <p class="tratamento-card__disp">Disponível em: todos os tipos de pele</p>
+          <p class="tratamento-card__dica">💡 Um dos produtos que mais viraliza entre consumidoras de pele madura.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- KITS PRESENTEÁVEIS -->
+  <section class="section produtos-secao" data-categoria="kits" aria-labelledby="kits-title">
+    <div class="section__inner">
+      <h2 id="kits-title" class="section__title">Kits presenteáveis</h2>
+      <p class="section__text">Pra indicar como presente ou pra quem quer conhecer mais de uma fragrância de uma vez.</p>
+
+      <div class="produto-grid">
+
+        <article class="kit-card">
+          <img class="kit-card__img" src="assets/produtos/kit-trilogia.png" alt="Kit Trilogia das Deusas">
+          <p class="kit-card__nome">Trilogia das Deusas</p>
+          <p class="kit-card__desc">Kit com 3 body splashes em miniatura (60ml cada): a forma mais fácil de apresentar mais de uma Deusa de uma vez só.</p>
+        </article>
+
+        <article class="kit-card">
+          <img class="kit-card__img" src="assets/produtos/kit-mini-afrodite.png" alt="Kit Mini Afrodite">
+          <p class="kit-card__nome">Kit Mini Afrodite</p>
+          <p class="kit-card__desc">Kit com body splash Afrodite Garden em miniatura (60ml) e Magic Butter mini (50g): a dupla ideal pra testar a fragrância e já sentir o efeito iluminador da linha Afrodite.</p>
+        </article>
+
+        <article class="kit-card">
+          <img class="kit-card__img" src="assets/produtos/kit-lollipop.png" alt="Kit Lollipop">
+          <p class="kit-card__nome">Lollipop</p>
+          <p class="kit-card__desc">Kit com miniaturas de 10ml das Deusas: formato compacto e colecionável, perfeito pra presentear ou testar fragrâncias novas.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA DE FECHAMENTO -->
+  <section class="section section--terracota" aria-labelledby="cta-title">
+    <div class="section__inner produtos-cta-row">
+      <div>
+        <h2 id="cta-title" class="section__title">Agora que você conhece cada produto...</h2>
+        <p class="section__text">Que tal já separar o conteúdo que mostra a textura, o brilho ou o cheiro de perto? É isso que mais gera confiança em quem assiste.</p>
+      </div>
+      <a class="btn btn--dark" href="enviar-conteudo.html">Enviar conteúdo →</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer__inner">
+    <img class="logo-aura logo-aura--light logo-aura--footer" src="assets/aura-logo-negative.png" alt="AURA Beauty" width="56" height="26">
+    <div>
+      <p class="footer__texto">Quer ficar por dentro das novidades da AURA?</p>
+      <p class="footer__canais">
+        <a href="https://chat.whatsapp.com/I6Dy4peElV0IxsdkTSI3gW" target="_blank" rel="noopener">Entrar no grupo de novidades</a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<script src="nav.js"></script>
+<script src="guia-produtos.js"></script>
+</body>
+</html>

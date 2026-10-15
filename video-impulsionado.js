@@ -124,7 +124,7 @@ function openVideoMetaModal(files) {
       const nomeSemExtensao = file.name.replace(/\.[^/.]+$/, "");
       return `
         <div class="field" data-video-index="${idx}" style="border-top:1px solid var(--placeholder-gray);padding-top:14px;margin-top:14px;">
-          <label style="font-size:12px;opacity:.7;">Vídeo ${idx + 1} de ${files.length} — ${escapeHtml(file.name)}</label>
+          <label style="font-size:12px;opacity:.7;">Vídeo ${idx + 1} de ${files.length}: ${escapeHtml(file.name)}</label>
           <input type="text" class="vm-nome" placeholder="Nome do Briefing" value="${escapeHtml(nomeSemExtensao)}">
           <select class="vm-categoria">
             <option value="" disabled selected>Qual produto?</option>
@@ -363,7 +363,7 @@ function setupForm() {
       const totalEnviados = await countSubmissionsByCupom(data.codigo);
       const plural = sucesso > 1 ? `${sucesso} vídeos` : "seu vídeo";
       feedback.textContent = totalEnviados
-        ? `Recebemos ${plural} — esse já é o seu ${totalEnviados}º envio no total! Nosso time confere o material e avisa você se algum for selecionado pra impulsionar.`
+        ? `Recebemos ${plural}. Esse já é o seu ${totalEnviados}º envio no total! Nosso time confere o material e avisa você se algum for selecionado pra impulsionar.`
         : `Recebemos ${plural}. Nosso time confere o material e avisa você se algum for selecionado pra impulsionar.`;
       feedback.dataset.state = "success";
     } else if (sucesso > 0) {
